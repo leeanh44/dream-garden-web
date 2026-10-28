@@ -26,6 +26,16 @@ Bản web của app iOS **Dream's Garden** (`../garden-app`): quản lý vườn
 
 > Muốn đăng ký không cần xác nhận email (tiện khi dev): **Authentication → Sign In / Providers → Email** → tắt *Confirm email*.
 
+### 1b. (Tuỳ chọn) Supabase local bằng Docker — không cần tài khoản
+
+```bash
+npx supabase start   # tự áp dụng supabase/migrations, in ra API URL + PUBLISHABLE_KEY
+```
+
+- API `http://127.0.0.1:54321` · Studio `http://127.0.0.1:54323` · Mailpit `http://127.0.0.1:54324`
+- Local không yêu cầu xác nhận email. Dừng bằng `npx supabase stop`.
+- `supabase/config.toml` đã tắt realtime, edge functions, analytics cho nhẹ.
+
 ### 2. Chạy local
 
 ```bash

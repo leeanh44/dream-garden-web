@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { connection } from 'next/server'
 import { Suspense } from 'react'
 import { AppShell } from '@/components/app-shell'
 import { isSupabaseConfigured } from '@/lib/supabase/env'
@@ -24,6 +25,8 @@ async function AccountMenu() {
     redirect('/login')
   }
 
+  // getClaims() kiểm tra hạn token bằng giờ hiện tại → chỉ chạy lúc request
+  await connection()
   const supabase = await createSupabaseServerClient()
   const { data } = await supabase.auth.getClaims()
   if (!data?.claims) {
