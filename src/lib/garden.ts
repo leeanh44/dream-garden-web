@@ -151,6 +151,22 @@ export const VND_INPUT_PLACEHOLDER = '250.000 ₫'
 export const formatVndNumber = (amount: number) =>
   new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(amount)
 
+/** 1.250.000 → "1,3tr" · 2.500.000.000 → "2,5 tỷ" (thẻ thống kê). */
+export const formatCompactVnd = (amount: number) => {
+  const format = (value: number, unit: string) =>
+    `${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(value)}${unit}`
+  if (amount >= 1_000_000_000) {
+    return format(amount / 1_000_000_000, ' tỷ')
+  }
+  if (amount >= 1_000_000) {
+    return format(amount / 1_000_000, 'tr')
+  }
+  if (amount >= 1_000) {
+    return format(amount / 1_000, 'k')
+  }
+  return formatVndNumber(amount)
+}
+
 export const formatVndAmount = (amount: number) => `${formatVndNumber(amount)} ${VND_UNIT}`
 
 export const parseVndAmount = (value: string): number | null => {

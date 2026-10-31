@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
+import { CheckIcon, SparkleIcon, TrashIcon } from '@/components/icons'
 import { RankSlider } from '@/components/rank-slider'
 import {
   VND_INPUT_PLACEHOLDER,
@@ -58,8 +59,9 @@ export function ProfileTab({ plant }: { plant: Plant }) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-      <form onSubmit={handleSubmit} className="card space-y-5 p-5">
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <form onSubmit={handleSubmit} className="card space-y-5 p-5 sm:p-6">
+        <h2 className="font-serif text-2xl font-semibold text-on-surface">Hồ sơ mẫu cây</h2>
         <label className="block">
           <span className="field-label">Tên cây</span>
           <input required value={name} onChange={(event) => setName(event.target.value)} className="field-input" />
@@ -70,13 +72,15 @@ export function ProfileTab({ plant }: { plant: Plant }) {
           <input
             value={scientificName}
             onChange={(event) => setScientificName(event.target.value)}
-            className="field-input italic"
+            className="field-input font-serif italic"
             placeholder="Monstera deliciosa 'Thai Constellation'"
           />
-          <span className="mt-1 block text-xs text-outline">Dùng để tra thông tin bằng Gemini AI (giai đoạn 3).</span>
+          <span className="mt-1 block text-xs text-outline">Danh pháp chuẩn (chi, loài, cultivar) — dùng để tra cứu bằng Gemini AI (giai đoạn 3).</span>
         </label>
 
-        <RankSlider value={rankScore} onChange={setRankScore} />
+        <div className="rounded-2xl bg-surface-container-low p-4">
+          <RankSlider value={rankScore} onChange={setRankScore} />
+        </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
@@ -99,7 +103,7 @@ export function ProfileTab({ plant }: { plant: Plant }) {
             />
           </label>
           <label className="block">
-            <span className="field-label">Định giá hiện tại (₫)</span>
+            <span className="field-label">Định giá thị trường (₫)</span>
             <input
               inputMode="numeric"
               value={marketValue}
@@ -109,7 +113,7 @@ export function ProfileTab({ plant }: { plant: Plant }) {
             />
           </label>
           <label className="block">
-            <span className="field-label">Cây mẹ</span>
+            <span className="field-label">Cây mẹ (nguồn nhân giống)</span>
             <select
               value={parentPlantId}
               onChange={(event) => setParentPlantId(event.target.value)}
@@ -131,31 +135,37 @@ export function ProfileTab({ plant }: { plant: Plant }) {
           </p>
         ) : null}
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 border-t border-surface-container-high pt-5">
           <button type="submit" disabled={updatePlant.isPending || !name.trim()} className="btn-primary">
             {updatePlant.isPending ? 'Đang lưu…' : 'Lưu hồ sơ'}
           </button>
           {savedAt && !updatePlant.isPending ? (
-            <span className="text-sm text-success-green">✓ Đã lưu</span>
+            <span className="inline-flex animate-fade-in items-center gap-1.5 text-sm font-semibold text-success-green">
+              <CheckIcon /> Đã lưu
+            </span>
           ) : null}
         </div>
       </form>
 
-      <aside className="space-y-4">
-        <div className="card space-y-2 p-5 text-sm">
-          <p className="font-serif text-lg text-primary">🤖 Thông tin AI</p>
+      <aside className="space-y-4 lg:sticky lg:top-[calc(env(safe-area-inset-top)+9rem)]">
+        <div className="card space-y-2 bg-gradient-to-br from-secondary-container/40 to-surface-container-lowest p-5 text-sm">
+          <p className="flex items-center gap-2 font-serif text-lg font-semibold text-primary">
+            <SparkleIcon /> Thông tin AI
+          </p>
           <p className="text-on-surface-variant">
-            Tra Gemini (ánh sáng, tưới nước, độ ẩm, đất trồng…) sẽ có ở giai đoạn 3.
+            Tra cứu điều kiện canh tác bằng Gemini (cường độ sáng, chế độ tưới, độ ẩm, nhiệt độ, giá thể…) sẽ có ở giai đoạn 3.
           </p>
         </div>
         <div className="card p-5">
-          <p className="mb-3 text-sm text-on-surface-variant">Xóa cây và toàn bộ ảnh lá khỏi kho.</p>
+          <p className="mb-1 font-semibold text-on-surface">Vùng nguy hiểm</p>
+          <p className="mb-3 text-sm text-on-surface-variant">Xóa mẫu cây cùng toàn bộ dữ liệu nhật ký khỏi kho.</p>
           <button
             type="button"
             onClick={handleDelete}
             disabled={deletePlant.isPending}
-            className="btn-ghost w-full bg-error-container text-on-error-container hover:bg-error-container/80"
+            className="btn-ghost w-full bg-error-container text-on-error-container hover:bg-error hover:text-on-error"
           >
+            <TrashIcon />
             {deletePlant.isPending ? 'Đang xóa…' : 'Xóa cây'}
           </button>
           {deletePlant.error ? <p className="mt-2 text-sm text-error">{deletePlant.error.message}</p> : null}

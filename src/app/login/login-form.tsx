@@ -75,7 +75,7 @@ export function LoginForm({ next, initialError }: { next?: string; initialError:
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 rounded-3xl bg-surface-container-lowest p-6 shadow-[0_10px_40px_-10px_rgba(0,106,70,0.12)]"
+      className="card space-y-4 p-6 shadow-leaf-lg"
     >
       <div className="grid grid-cols-2 gap-1 rounded-full bg-surface-container-low p-1 text-sm font-semibold">
         {(['signin', 'signup'] as const).map((value) => (
@@ -87,8 +87,8 @@ export function LoginForm({ next, initialError }: { next?: string; initialError:
               setError(null)
               setInfo(null)
             }}
-            className={`rounded-full py-2 transition-colors ${
-              mode === value ? 'bg-primary text-on-primary' : 'text-on-surface-variant'
+            className={`min-h-10 rounded-full transition-colors ${
+              mode === value ? 'bg-primary text-on-primary shadow' : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
             {value === 'signin' ? 'Đăng nhập' : 'Đăng ký'}

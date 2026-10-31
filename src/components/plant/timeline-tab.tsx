@@ -1,8 +1,11 @@
 'use client'
 
-import { memo, useRef, useState, type ChangeEvent } from 'react'
+import Link from 'next/link'
+import { memo, useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
+import { CameraIcon, CloseIcon, FilmIcon, ImageIcon, PencilIcon, TrashIcon } from '@/components/icons'
 import { PlantPhoto } from '@/components/plant-photo'
 import { formatDate, getDaysSinceDate, toDateInputValue, type Plant, type TimelineEntry } from '@/lib/garden'
+import { getCachedSignedUrl, warmImages } from '@/lib/photos'
 import {
   useAddTimelinePhotos,
   useDeleteTimelineEntry,
@@ -10,17 +13,30 @@ import {
   type UploadProgress,
 } from '@/lib/queries'
 
+const ACCEPTED_TYPES = 'image/jpeg,image/png,image/webp,image/heic,image/heif'
+/** Số ảnh đầu tiên tải ưu tiên cao */
+const EAGER_COUNT = 2
+
 export function TimelineTab({ plant }: { plant: Plant }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const addPhotos = useAddTimelinePhotos(plant.id)
   const [progress, setProgress] = useState<UploadProgress | null>(null)
   const [uploadErrors, setUploadErrors] = useState<string[]>([])
+  const [isDragging, setIsDragging] = useState(false)
+  const [viewing, setViewing] = useState<TimelineEntry | null>(null)
   const entries = plant.timeline_entries
 
-  const handleFiles = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? [])
-    event.target.value = ''
-    if (files.length === 0) {
+  // Khi rảnh, tải sẵn ảnh full của vài lá tiếp theo vào HTTP cache → cuộn xuống là có ngay
+  useEffect(() => {
+    const urls = entries
+      .slice(EAGER_COUNT, EAGER_COUNT + 6)
+      .map((entry) => getCachedSignedUrl(entry.photo_path))
+      .filter((url): url is string => Boolean(url))
+    warmImages(urls)
+  }, [entries])
+
+  const upload = (files: File[]) => {
+    if (files.length === 0 || addPhotos.isPending) {
       return
     }
     setUploadErrors([])
@@ -34,40 +50,72 @@ export function TimelineTab({ plant }: { plant: Plant }) {
     )
   }
 
+  const handleFiles = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? [])
+    event.target.value = ''
+    upload(files)
+  }
+
+  const handleDrop = (event: DragEvent) => {
+    event.preventDefault()
+    setIsDragging(false)
+    upload(Array.from(event.dataTransfer.files).filter((file) => file.type.startsWith('image/')))
+  }
+
   return (
-    <div>
-      <div className="mb-6 flex flex-wrap gap-3">
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-          multiple
-          hidden
-          onChange={handleFiles}
-        />
+    <div
+      onDragOver={(event) => {
+        if (event.dataTransfer.types.includes('Files')) {
+          event.preventDefault()
+          setIsDragging(true)
+        }
+      }}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setIsDragging(false)
+        }
+      }}
+      onDrop={handleDrop}
+      className="relative"
+    >
+      {isDragging ? (
+        <div className="pointer-events-none absolute -inset-2 z-10 flex items-start justify-center rounded-[2rem] border-2 border-dashed border-primary bg-secondary-container/70 pt-24 backdrop-blur-sm">
+          <p className="flex items-center gap-2 font-serif text-xl font-semibold text-primary">
+            <ImageIcon /> Thả ảnh để thêm vào nhật ký
+          </p>
+        </div>
+      ) : null}
+
+      <input ref={inputRef} type="file" accept={ACCEPTED_TYPES} multiple hidden onChange={handleFiles} />
+
+      <div className="mb-6 flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={addPhotos.isPending}
           className="btn-primary"
         >
-          {progress ? `Đang tải ${progress.done}/${progress.total}…` : '📷 Thêm ảnh lá'}
+          <CameraIcon className="text-lg" />
+          {progress ? `Đang tải ${progress.done}/${progress.total}…` : 'Ghi nhận ảnh lá'}
         </button>
-        <button
-          type="button"
-          disabled
-          className="btn-secondary"
-          title="Giai đoạn 2 — dựng video timelapse từ Nhật ký lá"
-        >
-          🎬 Tạo video <span className="text-xs font-normal">(sắp có)</span>
-        </button>
+        {entries.length >= 2 ? (
+          <Link href={`/plants/${plant.id}/video`} className="btn-secondary">
+            <FilmIcon className="text-lg" /> Tạo video
+          </Link>
+        ) : (
+          <span className="btn-secondary cursor-not-allowed opacity-50" title="Cần ít nhất 2 ảnh lá">
+            <FilmIcon className="text-lg" /> Tạo video
+            <span className="text-xs font-normal">(cần ≥2 ảnh)</span>
+          </span>
+        )}
+        <span className="hidden text-xs text-outline lg:inline">Mẹo: kéo thả ảnh vào đây để tải lên</span>
       </div>
 
       {progress ? (
         <div className="mb-6 h-2 overflow-hidden rounded-full bg-surface-container" aria-hidden="true">
           <div
-            className="h-full bg-primary transition-[width]"
-            style={{ width: `${(progress.done / progress.total) * 100}%` }}
+            className="h-full rounded-full bg-gradient-to-r from-primary-container to-success-green transition-[width] duration-300"
+            style={{ width: `${Math.max(6, (progress.done / progress.total) * 100)}%` }}
           />
         </div>
       ) : null}
@@ -81,24 +129,37 @@ export function TimelineTab({ plant }: { plant: Plant }) {
       ) : null}
 
       {entries.length === 0 ? (
-        <div className="card px-6 py-12 text-center">
-          <p className="font-serif text-xl text-primary">Chưa có ảnh lá</p>
-          <p className="mt-1 text-sm text-on-surface-variant">
-            Thêm ảnh để bắt đầu nhật ký. Ngày chụp được đọc tự động từ EXIF.
-          </p>
-        </div>
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="flex w-full flex-col items-center gap-3 rounded-3xl border-2 border-dashed border-outline-variant bg-surface-container-lowest/60 px-6 py-14 text-center transition-colors hover:border-primary hover:bg-secondary-container/30"
+        >
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary-container text-3xl text-primary">
+            <CameraIcon />
+          </span>
+          <span className="font-serif text-xl font-semibold text-primary">Chưa có dữ liệu sinh trưởng</span>
+          <span className="max-w-sm text-sm text-on-surface-variant">
+            Bấm hoặc kéo thả ảnh để bắt đầu nhật ký. Ngày chụp được lấy tự động từ dữ liệu EXIF.
+          </span>
+        </button>
       ) : (
-        <ol className="relative space-y-6 border-l border-dashed border-outline-variant pl-6">
+        <ol className="sm:grid sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
           {entries.map((entry, index) => (
             <TimelineEntryCard
               key={entry.id}
               entry={entry}
               plantName={plant.name}
               leafNumber={entries.length - index}
+              isFirst={index === 0}
+              isLast={index === entries.length - 1}
+              priority={index < EAGER_COUNT}
+              onView={setViewing}
             />
           ))}
         </ol>
       )}
+
+      <PhotoViewer entry={viewing} plantName={plant.name} onClose={() => setViewing(null)} />
     </div>
   )
 }
@@ -107,10 +168,18 @@ const TimelineEntryCard = memo(function TimelineEntryCard({
   entry,
   plantName,
   leafNumber,
+  isFirst,
+  isLast,
+  priority,
+  onView,
 }: {
   entry: TimelineEntry
   plantName: string
   leafNumber: number
+  isFirst: boolean
+  isLast: boolean
+  priority: boolean
+  onView: (entry: TimelineEntry) => void
 }) {
   const updateEntry = useUpdateTimelineEntry()
   const deleteEntry = useDeleteTimelineEntry()
@@ -139,39 +208,69 @@ const TimelineEntryCard = memo(function TimelineEntryCard({
   }
 
   return (
-    <li className="relative">
-      <span
-        className="absolute top-4 -left-[33px] h-4 w-4 rounded-full border-4 border-surface bg-primary"
-        aria-hidden="true"
-      />
-      <article className="card overflow-hidden">
-        <PlantPhoto
-          path={entry.photo_path}
-          alt={`${plantName} — lá #${leafNumber}, ${formatDate(entry.taken_at)}`}
-          className="max-h-[70vh] w-full bg-surface-container-low object-contain"
+    // Cột trái: chấm + đường kẻ cùng một lưới với thẻ → luôn thẳng hàng
+    <li className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-x-3 sm:block">
+      <div className="relative flex justify-center sm:hidden" aria-hidden="true">
+        {isFirst && isLast ? null : (
+          <span
+            className={`absolute w-0.5 bg-gradient-to-b from-primary/30 to-outline-variant/40 ${
+              isFirst ? 'top-6 bottom-0' : isLast ? 'top-0 h-6' : 'inset-y-0'
+            }`}
+          />
+        )}
+        <span
+          className={`relative mt-4 h-4 w-4 rounded-full ring-4 ring-surface ${
+            isFirst ? 'bg-primary shadow-[0_0_0_6px_rgba(0,106,70,0.15)]' : 'bg-primary-fixed-dim'
+          }`}
         />
-        <div className="p-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-secondary-container px-3 py-1 text-xs font-bold text-on-secondary-container">
-              {formatDate(entry.taken_at)}
-            </span>
-            <span className="text-xs text-outline">
-              Lá #{leafNumber} · {daysAgo <= 0 ? 'hôm nay' : `${daysAgo} ngày trước`}
-            </span>
-            <div className="ml-auto flex gap-1">
-              <button type="button" onClick={() => setIsEditing((value) => !value)} className="btn-ghost">
-                {isEditing ? 'Hủy' : '✏️ Ghi chú'}
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={deleteEntry.isPending}
-                className="btn-ghost text-error"
-                aria-label="Xóa ảnh"
-              >
-                🗑
-              </button>
+      </div>
+
+      <article
+        className={`card mb-6 flex h-full flex-col overflow-hidden sm:mb-0 ${isFirst ? 'animate-fade-up' : ''} ${
+          deleteEntry.isPending ? 'opacity-50' : ''
+        }`}
+      >
+        <button
+          type="button"
+          onClick={() => onView(entry)}
+          className="group relative block w-full shrink-0 cursor-zoom-in"
+          aria-label={`Phóng to lá #${leafNumber}`}
+        >
+          <PlantPhoto
+            path={entry.photo_path}
+            placeholderPath={entry.thumb_path}
+            alt={`${plantName} — lá #${leafNumber}, ${formatDate(entry.taken_at)}`}
+            priority={priority}
+            className="aspect-[4/5] w-full"
+          />
+          <span className="pill absolute top-3 left-3 bg-black/45 text-white backdrop-blur">Lá #{leafNumber}</span>
+        </button>
+
+        <div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
+          <div className="flex items-start gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="font-serif text-xl font-semibold text-on-surface">{formatDate(entry.taken_at)}</p>
+              <p className="text-xs text-outline">{daysAgo <= 0 ? 'Hôm nay' : `${daysAgo} ngày trước`}</p>
             </div>
+            <button
+              type="button"
+              onClick={() => setIsEditing((value) => !value)}
+              className="btn-icon"
+              aria-label={isEditing ? 'Hủy sửa' : 'Sửa ghi chú'}
+              title={isEditing ? 'Hủy' : 'Sửa ghi chú quan sát / ngày chụp'}
+            >
+              {isEditing ? <CloseIcon /> : <PencilIcon />}
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleteEntry.isPending}
+              className="btn-icon hover:bg-error-container hover:text-error"
+              aria-label="Xóa ảnh"
+              title="Xóa ảnh"
+            >
+              <TrashIcon />
+            </button>
           </div>
 
           {isEditing ? (
@@ -187,18 +286,16 @@ const TimelineEntryCard = memo(function TimelineEntryCard({
                 />
               </label>
               <label className="block">
-                <span className="field-label">Ghi chú</span>
+                <span className="field-label">Ghi chú quan sát</span>
                 <textarea
                   value={note}
                   onChange={(event) => setNote(event.target.value)}
                   rows={3}
                   className="field-input resize-y"
-                  placeholder="Lá mới bung, var đẹp…"
+                  placeholder="VD: lá non đã mở, var half-moon, mảng trắng ổn định, không cháy mép…"
                 />
               </label>
-              {updateEntry.error ? (
-                <p className="text-sm text-error">{updateEntry.error.message}</p>
-              ) : null}
+              {updateEntry.error ? <p className="text-sm text-error">{updateEntry.error.message}</p> : null}
               <button
                 type="button"
                 onClick={handleSave}
@@ -209,10 +306,85 @@ const TimelineEntryCard = memo(function TimelineEntryCard({
               </button>
             </div>
           ) : entry.note ? (
-            <p className="mt-3 text-sm whitespace-pre-line text-on-surface-variant">{entry.note}</p>
-          ) : null}
+            <p className="mt-3 rounded-2xl bg-surface-container-low px-4 py-3 text-sm leading-relaxed whitespace-pre-line text-on-surface-variant">
+              {entry.note}
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsEditing(true)}
+              className="mt-3 self-start text-sm text-outline underline-offset-4 hover:text-primary hover:underline"
+            >
+              + Thêm ghi chú quan sát
+            </button>
+          )}
         </div>
       </article>
     </li>
   )
 })
+
+/** Xem ảnh lá toàn màn hình (giữ trọn ảnh, không cắt). */
+function PhotoViewer({
+  entry,
+  plantName,
+  onClose,
+}: {
+  entry: TimelineEntry | null
+  plantName: string
+  onClose: () => void
+}) {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) {
+      return
+    }
+    if (entry && !dialog.open) {
+      dialog.showModal()
+    } else if (!entry && dialog.open) {
+      dialog.close()
+    }
+  }, [entry])
+
+  return (
+    <dialog
+      ref={dialogRef}
+      onClose={onClose}
+      onClick={onClose}
+      className="m-0 h-dvh max-h-none w-screen max-w-none bg-transparent p-0 backdrop:bg-black/90 backdrop:backdrop-blur-sm"
+      aria-label="Xem ảnh lá"
+    >
+      {entry ? (
+        <div className="flex h-full w-full animate-fade-in flex-col p-3 pt-[calc(env(safe-area-inset-top)+12px)] pb-[calc(env(safe-area-inset-bottom)+12px)]">
+          <div className="mb-3 flex items-center gap-3 text-white">
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-serif text-lg font-semibold">{plantName}</p>
+              <p className="text-xs text-white/70">{formatDate(entry.taken_at)}</p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-xl hover:bg-white/25"
+              aria-label="Đóng"
+            >
+              <CloseIcon />
+            </button>
+          </div>
+          <PlantPhoto
+            path={entry.photo_path}
+            placeholderPath={entry.thumb_path}
+            alt={`${plantName} — ${formatDate(entry.taken_at)}`}
+            fit="contain"
+            priority
+            className="min-h-0 flex-1 rounded-2xl !bg-transparent"
+          />
+          {entry.note ? (
+            <p className="mx-auto mt-3 max-w-2xl text-center text-sm whitespace-pre-line text-white/85">{entry.note}</p>
+          ) : null}
+        </div>
+      ) : null}
+    </dialog>
+  )
+}
