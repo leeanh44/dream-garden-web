@@ -49,6 +49,8 @@ export type Plant = {
   id: string
   name: string
   scientific_name: string | null
+  /** Dòng / cultivar (VD: Thai Constellation) — gom bộ sưu tập lá */
+  cultivar: string | null
   rank_score: number
   purchased_at: string | null
   purchase_price: number | null
@@ -63,6 +65,29 @@ export type Plant = {
   /** Đã sắp xếp mới → cũ */
   timeline_entries: TimelineEntry[]
 }
+
+/** Lá đã tách nền (bảng `leaf_cutouts`). */
+export type LeafCutout = {
+  id: string
+  plant_id: string
+  entry_id: string
+  cutout_path: string
+  thumb_path: string | null
+  width: number
+  height: number
+  /** 0–1 */
+  var_ratio: number | null
+  points: { x: number; y: number; label: 0 | 1 }[] | null
+  created_at: string
+}
+
+/** Khoá gom "dòng": cultivar → tên khoa học → tên cây. */
+export const getPlantLine = (plant: Pick<Plant, 'cultivar' | 'scientific_name' | 'name'>) => {
+  const title = plant.cultivar?.trim() || plant.scientific_name?.trim() || plant.name.trim()
+  return { key: title.toLocaleLowerCase('vi'), title }
+}
+
+export const formatVarRatio = (ratio: number | null) => (ratio == null ? '—' : `${Math.round(ratio * 100)}%`)
 
 export type PlantSortMode = 'name' | 'createdAt'
 export type PlantRankFilter = 'all' | 'top1' | 'top2' | 'top3'

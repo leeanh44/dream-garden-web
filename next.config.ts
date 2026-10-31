@@ -7,6 +7,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Cross-origin isolation → WebAssembly đa luồng cho AI tách lá (nhanh gấp nhiều lần).
+        // `credentialless` vẫn cho tải ảnh Supabase / mô hình HuggingFace mà không cần header CORP.
+        source: '/:path*',
+        headers: [
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Embedder-Policy', value: 'credentialless' },
+        ],
+      },
+      {
         // Service worker luôn lấy bản mới nhất
         source: '/sw.js',
         headers: [

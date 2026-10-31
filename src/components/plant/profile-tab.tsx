@@ -23,6 +23,7 @@ export function ProfileTab({ plant }: { plant: Plant }) {
 
   const [name, setName] = useState(plant.name)
   const [scientificName, setScientificName] = useState(plant.scientific_name ?? '')
+  const [cultivar, setCultivar] = useState(plant.cultivar ?? '')
   const [rankScore, setRankScore] = useState(plant.rank_score)
   const [purchasePrice, setPurchasePrice] = useState(toPriceInput(plant.purchase_price))
   const [purchasedAt, setPurchasedAt] = useState(plant.purchased_at ?? '')
@@ -31,6 +32,10 @@ export function ProfileTab({ plant }: { plant: Plant }) {
   const [savedAt, setSavedAt] = useState<number | null>(null)
 
   const parentOptions = (plants ?? []).filter((candidate) => candidate.id !== plant.id)
+  // Gợi ý các dòng đã nhập để gõ thống nhất
+  const cultivarOptions = [
+    ...new Set((plants ?? []).map((candidate) => candidate.cultivar?.trim()).filter((value): value is string => Boolean(value))),
+  ]
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -39,6 +44,7 @@ export function ProfileTab({ plant }: { plant: Plant }) {
         id: plant.id,
         name: name.trim(),
         scientific_name: scientificName.trim() || null,
+        cultivar: cultivar.trim() || null,
         rank_score: rankScore,
         purchase_price: parseVndAmount(purchasePrice),
         purchased_at: purchasedAt || null,
@@ -76,6 +82,25 @@ export function ProfileTab({ plant }: { plant: Plant }) {
             placeholder="Monstera deliciosa 'Thai Constellation'"
           />
           <span className="mt-1 block text-xs text-outline">Danh pháp chuẩn (chi, loài, cultivar) — dùng để tra cứu bằng Gemini AI (giai đoạn 3).</span>
+        </label>
+
+        <label className="block">
+          <span className="field-label">Dòng / cultivar</span>
+          <input
+            value={cultivar}
+            onChange={(event) => setCultivar(event.target.value)}
+            className="field-input"
+            placeholder="Thai Constellation, Albo, Mint…"
+            list="cultivar-options"
+          />
+          <datalist id="cultivar-options">
+            {cultivarOptions.map((option) => (
+              <option key={option} value={option} />
+            ))}
+          </datalist>
+          <span className="mt-1 block text-xs text-outline">
+            Các mẫu cây cùng dòng được gom chung trong Bộ sưu tập lá.
+          </span>
         </label>
 
         <div className="rounded-2xl bg-surface-container-low p-4">

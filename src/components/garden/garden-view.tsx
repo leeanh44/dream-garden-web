@@ -210,7 +210,7 @@ export function GardenView() {
         aria-label="Thêm cây"
         title="Thêm cây"
       >
-        <LeafPlusIcon className="h-8 w-8 text-primary-fixed" />
+        <LeafPlusIcon className="h-9 w-9" />
       </button>
 
       <AddPlantDialog open={isAddOpen} onClose={() => setIsAddOpen(false)} />
@@ -252,7 +252,7 @@ function GardenHero({
           onClick={onAdd}
           className="hidden min-h-12 items-center gap-2 self-start rounded-full bg-primary-fixed px-5 font-semibold text-primary shadow-[0_8px_24px_-8px_rgba(0,0,0,0.45)] transition-transform hover:scale-[1.03] active:scale-[0.97] md:inline-flex md:self-auto"
         >
-          <LeafPlusIcon className="h-6 w-6 text-primary" />
+          <LeafPlusIcon className="h-7 w-7" />
           Thêm cây
         </button>
       </div>
@@ -280,7 +280,7 @@ function EmptyGarden({ onAdd }: { onAdd: () => void }) {
         <p className="mt-1 text-sm text-on-surface-variant">Nhập mẫu cây đầu tiên để bắt đầu theo dõi sinh trưởng.</p>
       </div>
       <button type="button" onClick={onAdd} className="btn-primary">
-        <LeafPlusIcon className="h-6 w-6 text-primary-fixed" />
+        <LeafPlusIcon className="h-7 w-7" />
         Thêm cây
       </button>
     </div>

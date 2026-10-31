@@ -1,9 +1,9 @@
 /* Service worker của Dream's Garden.
- * - Tài nguyên build (/_next/static, tên có hash) → cache-first.
+ * - Tài nguyên build (/_next/static, tên có hash) → cache-first (trừ script Web Worker).
  * - Điều hướng trang → luôn lấy mạng (dữ liệu cần đăng nhập), mất mạng thì hiện /offline.html.
  * - Không đụng tới Supabase (API, ảnh) — ảnh đã có HTTP cache + signed URL bền.
  */
-const VERSION = 'v1'
+const VERSION = 'v2'
 const STATIC_CACHE = `dg-static-${VERSION}`
 const PRECACHE = ['/offline.html', '/icons/icon-192.png', '/manifest.webmanifest']
 
@@ -41,6 +41,12 @@ self.addEventListener('fetch', (event) => {
         }
       })(),
     )
+    return
+  }
+
+  // Script của Web Worker: Turbopack truyền danh sách chunk qua `#params=…` mà Cache API bỏ qua phần `#`
+  // → cache-first sẽ chạy worker với chunk của bản build cũ. Luôn lấy từ mạng (HTTP cache vẫn áp dụng).
+  if (request.destination === 'worker' || request.destination === 'sharedworker' || url.pathname.includes('turbopack-worker')) {
     return
   }
 
