@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useDeferredValue, useMemo, useState } from 'react'
 import { AddPlantDialog } from '@/components/garden/add-plant-dialog'
 import { PlantListItem } from '@/components/garden/plant-list-item'
+import { InstallBanner } from '@/components/pwa/install-banner'
 import { TopTrending } from '@/components/garden/top-trending'
 import {
   AlertIcon,
@@ -105,6 +106,8 @@ export function GardenView() {
         totalValue={totalValue}
         onAdd={() => setIsAddOpen(true)}
       />
+
+      <InstallBanner />
 
       {stalePlant ? (
         <Link

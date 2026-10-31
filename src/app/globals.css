@@ -203,3 +203,15 @@ select.field-input {
   background-position: right 1rem center;
   background-size: 1.1rem;
 }
+
+/* Khi chạy như app đã cài: không kéo nảy cả trang, không chọn chữ khi chạm giữ nút */
+@media (display-mode: standalone) {
+  body {
+    overscroll-behavior-y: none;
+  }
+  nav,
+  button {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
