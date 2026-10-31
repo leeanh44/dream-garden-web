@@ -1,17 +1,20 @@
 'use client'
 
 import { useEffect, useRef, type ReactNode } from 'react'
+import { CloseIcon } from '@/components/icons'
 
 /** Bottom sheet trên mobile, hộp thoại giữa màn hình trên desktop (dựa trên <dialog>). */
 export function Modal({
   open,
   onClose,
   title,
+  icon,
   children,
 }: {
   open: boolean
   onClose: () => void
   title: string
+  icon?: ReactNode
   children: ReactNode
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -37,18 +40,19 @@ export function Modal({
           onClose()
         }
       }}
-      className="m-0 mt-auto w-full max-w-none rounded-t-[2rem] bg-surface-container-lowest p-0 text-on-surface shadow-leaf backdrop:bg-inverse-surface/40 backdrop:backdrop-blur-sm sm:m-auto sm:max-w-lg sm:rounded-[2rem]"
+      className="m-0 mt-auto w-full max-w-none overflow-hidden rounded-t-[2rem] bg-surface-container-lowest p-0 text-on-surface shadow-leaf-lg backdrop:bg-[#001a10]/45 backdrop:backdrop-blur-sm open:animate-fade-up sm:m-auto sm:max-w-lg sm:rounded-[2rem]"
     >
-      <div className="max-h-[85dvh] overflow-y-auto px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+20px)]">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <h2 className="font-serif text-2xl text-primary">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-full text-xl text-on-surface-variant hover:bg-surface-container"
-            aria-label="Đóng"
-          >
-            ×
+      <div className="max-h-[88dvh] overflow-y-auto px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+20px)] sm:px-6 sm:pt-6">
+        <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-outline-variant sm:hidden" aria-hidden="true" />
+        <div className="mb-5 flex items-center gap-3">
+          {icon ? (
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary-container text-primary">
+              {icon}
+            </span>
+          ) : null}
+          <h2 className="min-w-0 flex-1 font-serif text-2xl font-semibold text-primary">{title}</h2>
+          <button type="button" onClick={onClose} className="btn-icon -mr-2" aria-label="Đóng">
+            <CloseIcon />
           </button>
         </div>
         {open ? children : null}

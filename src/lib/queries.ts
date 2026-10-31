@@ -3,7 +3,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { sortTimelineEntries, type Plant, type TimelineEntry } from '@/lib/garden'
-import { PHOTOS_BUCKET, SIGNED_URL_STALE_MS, getSignedPhotoUrl, preparePhoto } from '@/lib/photos'
+import {
+  PHOTOS_BUCKET,
+  PHOTO_CACHE_CONTROL,
+  SIGNED_URL_STALE_MS,
+  forgetSignedUrls,
+  getCachedSignedUrl,
+  getSignedPhotoUrl,
+  preparePhoto,
+  primeSignedUrls,
+} from '@/lib/photos'
 
 const PLANTS_QUERY_KEY = ['plants'] as const
 
@@ -38,10 +47,16 @@ const fetchPlants = async (): Promise<Plant[]> => {
       .order('created_at', { ascending: false }),
   ) as Plant[]
 
-  return rows.map((plant) => ({
+  const plants = rows.map((plant) => ({
     ...plant,
     timeline_entries: sortTimelineEntries(plant.timeline_entries ?? []),
   }))
+
+  // Xin signed URL cho thumbnail mọi cây trong 1 request, song song với lúc React render danh sách
+  primeSignedUrls(
+    plants.map((plant) => plant.timeline_entries[0]?.thumb_path ?? plant.timeline_entries[0]?.photo_path),
+  )
+  return plants
 }
 
 /** Toàn bộ kho cây (kèm nhật ký lá) — vườn cá nhân nên tải 1 lần là đủ. */
@@ -57,8 +72,11 @@ export const usePhotoUrl = (path: string | null | undefined) =>
     queryKey: ['photo-url', path],
     queryFn: () => getSignedPhotoUrl(path as string),
     enabled: Boolean(path),
+    // URL đã có trong cache bền → hiện ảnh ngay frame đầu, không nháy skeleton
+    initialData: () => getCachedSignedUrl(path),
     staleTime: SIGNED_URL_STALE_MS,
-    gcTime: SIGNED_URL_STALE_MS,
+    gcTime: SIGNED_URL_STALE_MS * 4,
+    retry: 1,
   })
 
 // ---------------------------------------------------------------------------
@@ -106,6 +124,7 @@ const removePhotoFiles = async (entries: Pick<TimelineEntry, 'photo_path' | 'thu
     entry.thumb_path ? [entry.photo_path, entry.thumb_path] : [entry.photo_path],
   )
   if (paths.length > 0) {
+    forgetSignedUrls(paths)
     // Lỗi xóa file không chặn việc xóa dữ liệu — file mồ côi chỉ tốn dung lượng.
     await supabase().storage.from(PHOTOS_BUCKET).remove(paths)
   }
@@ -152,8 +171,17 @@ export const useAddTimelinePhotos = (plantId: string) => {
           const thumbPath = `${userId}/${plantId}/${id}_thumb.jpg`
           const bucket = supabase().storage.from(PHOTOS_BUCKET)
 
-          throwIfError(await bucket.upload(photoPath, full, { contentType: 'image/jpeg' }))
-          throwIfError(await bucket.upload(thumbPath, thumb, { contentType: 'image/jpeg' }))
+          const options = { contentType: 'image/jpeg', cacheControl: PHOTO_CACHE_CONTROL }
+          // Tải song song bản full + thumbnail
+          try {
+            await Promise.all([
+              bucket.upload(photoPath, full, options).then(throwIfError),
+              bucket.upload(thumbPath, thumb, options).then(throwIfError),
+            ])
+          } catch (uploadError) {
+            await bucket.remove([photoPath, thumbPath])
+            throw uploadError
+          }
 
           const { error } = await supabase().from('timeline_entries').insert({
             id,

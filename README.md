@@ -9,7 +9,7 @@ Bản web của app iOS **Dream's Garden** (`../garden-app`): quản lý vườn
 | Giai đoạn | Nội dung | Trạng thái |
 |---|---|---|
 | 1 | Đăng nhập, Kho cây, Chi tiết cây (Nhật ký lá + Hồ sơ), upload ảnh | ✅ |
-| 2 | Video timelapse từ Nhật ký lá (9:16 · 1:1 · 16:9, MP4) | ⏳ |
+| 2 | Video timelapse từ Nhật ký lá (9:16 · 1:1 · 16:9, MP4) | ✅ |
 | 3 | Gemini AI, tab Xuất, tab Giao dịch | ⏳ |
 | 4 | Thiết kế vườn 3D | ⏳ |
 
@@ -79,6 +79,7 @@ src/
 ## Ghi chú kỹ thuật
 
 - **Ảnh:** nén trên trình duyệt trước khi upload — bản full ≤2048px + thumbnail ≤480px (JPEG). Ngày chụp đọc từ EXIF (`exifr`). Bucket private, đọc qua signed URL (gom nhiều ảnh thành 1 request, cache ~50 phút). Đường dẫn: `{user_id}/{plant_id}/{uuid}.jpg`.
+- **Video (`src/lib/video/`):** render + encode hoàn toàn trên trình duyệt — canvas vẽ từng frame (`scene.ts`, dùng chung cho preview và xuất), [Mediabunny](https://mediabunny.dev) + WebCodecs mã hoá MP4/H.264 (fallback WebM nếu không có H.264). Chỉ giải mã ~4 ảnh quanh vị trí đang phát để chạy được trên điện thoại.
 - **Bảo mật:** RLS trên mọi bảng + storage policy theo thư mục `user_id`.
 - **Font:** Lora thay Libre Caslon Text của app vì Caslon không có glyph tiếng Việt. Body vẫn là Plus Jakarta Sans.
 - **Thuật ngữ UI** giữ theo app: Kho cây, Nhật ký lá, Hồ sơ, Nhập/Xuất, Đã xuất, Nổi bật.

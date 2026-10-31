@@ -3,7 +3,7 @@ import { PlantDetail } from '@/components/plant/plant-detail'
 
 export default function PlantPage({ params }: PageProps<'/plants/[id]'>) {
   return (
-    <Suspense fallback={<div className="h-72 animate-pulse rounded-[2rem] bg-surface-container" />}>
+    <Suspense fallback={<div className="skeleton mt-13 h-[22rem] rounded-[2rem] sm:h-[26rem]" />}>
       <PlantDetailWithParams params={params} />
     </Suspense>
   )

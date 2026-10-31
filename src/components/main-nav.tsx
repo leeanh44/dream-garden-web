@@ -2,19 +2,21 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import type { ComponentType } from 'react'
+import { CubeIcon, LeafIcon, WalletIcon } from '@/components/icons'
 
 type NavItem = {
   href: string
   label: string
-  icon: string
+  icon: ComponentType<{ className?: string }>
   /** Giai đoạn sau — hiện mờ + badge "Sắp có" */
   comingSoon?: boolean
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { href: '/', label: 'Kho cây', icon: '🌿' },
-  { href: '/insights', label: 'Giao dịch', icon: '💰', comingSoon: true },
-  { href: '/planner', label: 'Vườn 3D', icon: '🧊', comingSoon: true },
+  { href: '/', label: 'Kho cây', icon: LeafIcon },
+  { href: '/insights', label: 'Giao dịch', icon: WalletIcon, comingSoon: true },
+  { href: '/planner', label: 'Vườn 3D', icon: CubeIcon, comingSoon: true },
 ]
 
 const isActive = (pathname: string | null, href: string) =>
@@ -40,8 +42,8 @@ function NavList({ variant, pathname }: MainNavProps & { pathname: string | null
     <nav
       className={
         compact
-          ? 'fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+12px)] z-30 flex justify-around rounded-full border border-surface-container-high bg-surface-container-lowest/95 p-1.5 shadow-leaf backdrop-blur md:hidden'
-          : 'hidden flex-1 items-center gap-1 md:flex'
+          ? 'fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+12px)] z-30 mx-auto flex max-w-md gap-1 rounded-full border border-white/60 bg-surface-container-lowest/85 p-1.5 shadow-leaf-lg backdrop-blur-xl backdrop-saturate-150 md:hidden'
+          : 'hidden items-center gap-1 md:flex'
       }
       aria-label="Điều hướng chính"
     >
@@ -53,29 +55,30 @@ function NavList({ variant, pathname }: MainNavProps & { pathname: string | null
 }
 
 function NavLink({ item, active, compact }: { item: NavItem; active: boolean; compact: boolean }) {
+  const Icon = item.icon
   const className = compact
-    ? `flex flex-1 flex-col items-center gap-0.5 rounded-full py-2 text-[11px] font-semibold ${
+    ? `flex h-14 flex-1 flex-col items-center justify-center gap-1 rounded-full text-[11px] leading-none font-semibold transition-colors ${
         active ? 'bg-secondary-container text-primary' : 'text-on-surface-variant'
       }`
-    : `flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+    : `flex h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold transition-colors ${
         active ? 'bg-secondary-container text-primary' : 'text-on-surface-variant hover:bg-surface-container'
       }`
 
   const content = (
     <>
-      <span aria-hidden="true" className={compact ? 'text-lg leading-none' : ''}>
-        {item.icon}
-      </span>
+      <Icon className={compact ? 'h-5 w-5' : 'h-4 w-4'} />
       <span>{item.label}</span>
       {item.comingSoon && !compact ? (
-        <span className="rounded-full bg-surface-container-high px-2 py-0.5 text-[10px] text-outline">Sắp có</span>
+        <span className="rounded-full bg-surface-container-high px-2 py-0.5 text-[10px] leading-none font-semibold text-outline">
+          Sắp có
+        </span>
       ) : null}
     </>
   )
 
   if (item.comingSoon) {
     return (
-      <span className={`${className} cursor-not-allowed opacity-50`} aria-disabled="true" title="Sắp có">
+      <span className={`${className} cursor-not-allowed opacity-45`} aria-disabled="true" title="Sắp có">
         {content}
       </span>
     )

@@ -1,6 +1,7 @@
 import { connection } from 'next/server'
 import { Suspense } from 'react'
 import { LoginForm } from './login-form'
+import { AppLogo, LeafIcon } from '@/components/icons'
 import { APP_NAME, pickRandomGardenSlogan } from '@/lib/garden'
 import { isSupabaseConfigured } from '@/lib/supabase/env'
 
@@ -8,12 +9,13 @@ export const metadata = { title: `Đăng nhập · ${APP_NAME}` }
 
 export default function LoginPage({ searchParams }: PageProps<'/login'>) {
   return (
-    <main className="flex min-h-dvh items-center justify-center px-4 py-10">
-      <div className="w-full max-w-sm">
+    <main className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-10">
+      <LeafIcon className="pointer-events-none absolute -top-16 -left-20 h-80 w-80 -rotate-[30deg] text-primary-fixed/40" />
+      <LeafIcon className="pointer-events-none absolute -right-24 -bottom-20 h-96 w-96 rotate-[150deg] text-secondary-container/70" />
+      <div className="relative w-full max-w-sm animate-fade-up">
         <div className="mb-8 text-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icon.svg" alt="" className="mx-auto mb-4 h-14 w-14" />
-          <h1 className="font-serif text-4xl text-primary">{APP_NAME}</h1>
+          <AppLogo className="mx-auto mb-5 h-16 w-16 animate-sway drop-shadow-[0_12px_20px_rgba(0,79,51,0.35)]" />
+          <h1 className="font-serif text-4xl font-semibold text-primary">{APP_NAME}</h1>
           <p className="mt-2 min-h-5 text-sm text-on-surface-variant">
             <Suspense>
               <Slogan />
