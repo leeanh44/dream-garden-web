@@ -294,7 +294,7 @@ const drawHeader = (draw: DrawContext) => {
 
   const logoSize = 56 * u
   if (scene.logo) {
-    ctx.drawImage(scene.logo, pad, pad, logoSize, logoSize)
+    drawLogo(ctx, scene.logo, pad, pad, logoSize)
   }
   ctx.fillStyle = COLORS.white
   ctx.textBaseline = 'middle'
@@ -369,7 +369,7 @@ const drawTitleCard = (draw: DrawContext, kind: 'intro' | 'outro', progress: num
     const logoSize = 140 * u
     const top = height / 2 - 150 * u + rise
     if (scene.logo) {
-      ctx.drawImage(scene.logo, centerX - logoSize / 2, top, logoSize, logoSize)
+      drawLogo(ctx, scene.logo, centerX - logoSize / 2, top, logoSize)
     }
     ctx.font = `600 ${64 * u}px ${scene.fonts.serif}`
     ctx.fillText(APP_NAME, centerX, top + logoSize + 90 * u)
@@ -395,6 +395,15 @@ const drawProgressBar = (draw: DrawContext, progress: number) => {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/** Logo bo góc (ảnh gốc có nền trắng ở 4 góc). */
+const drawLogo = (ctx: CanvasRenderingContext2D, logo: CanvasImageSource, x: number, y: number, size: number) => {
+  ctx.save()
+  roundRect(ctx, x, y, size, size, size * 0.24)
+  ctx.clip()
+  ctx.drawImage(logo, x, y, size, size)
+  ctx.restore()
+}
 
 const roundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
   ctx.beginPath()

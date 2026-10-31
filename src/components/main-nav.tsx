@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { ComponentType } from 'react'
-import { CameraIcon, CubeIcon, LeafIcon, WalletIcon } from '@/components/icons'
+import { CameraIcon, CollectionIcon, CubeIcon, LeafIcon, WalletIcon } from '@/components/icons'
 
 type NavItem = {
   href: string
@@ -16,6 +16,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { href: '/', label: 'Kho cây', icon: LeafIcon },
   { href: '/capture', label: 'Chụp nhanh', icon: CameraIcon },
+  { href: '/collection', label: 'Bộ sưu tập', icon: CollectionIcon },
   { href: '/insights', label: 'Giao dịch', icon: WalletIcon, comingSoon: true },
   { href: '/planner', label: 'Vườn 3D', icon: CubeIcon, comingSoon: true },
 ]
@@ -44,7 +45,7 @@ function NavList({ variant, pathname }: MainNavProps & { pathname: string | null
       className={
         compact
           ? 'fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+12px)] z-30 mx-auto flex max-w-md gap-1 rounded-full border border-white/60 bg-surface-container-lowest/85 p-1.5 shadow-leaf-lg backdrop-blur-xl backdrop-saturate-150 md:hidden'
-          : 'hidden items-center gap-1 md:flex'
+          : 'hidden min-w-0 items-center gap-0.5 md:flex lg:gap-1'
       }
       aria-label="Điều hướng chính"
     >
@@ -61,25 +62,21 @@ function NavLink({ item, active, compact }: { item: NavItem; active: boolean; co
     ? `flex h-14 flex-1 flex-col items-center justify-center gap-1 rounded-full text-[11px] leading-none font-semibold transition-colors ${
         active ? 'bg-secondary-container text-primary' : 'text-on-surface-variant'
       }`
-    : `flex h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold transition-colors ${
+    : `flex h-10 items-center gap-2 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition-colors lg:px-4 ${
         active ? 'bg-secondary-container text-primary' : 'text-on-surface-variant hover:bg-surface-container'
       }`
 
   const content = (
     <>
       <Icon className={compact ? 'h-5 w-5' : 'h-4 w-4'} />
-      <span>{item.label}</span>
-      {item.comingSoon && !compact ? (
-        <span className="rounded-full bg-surface-container-high px-2 py-0.5 text-[10px] leading-none font-semibold text-outline">
-          Sắp có
-        </span>
-      ) : null}
+      {/* Màn vừa: mục "Sắp có" chỉ hiện icon để thanh điều hướng không xuống dòng */}
+      <span className={item.comingSoon && !compact ? 'hidden lg:inline' : undefined}>{item.label}</span>
     </>
   )
 
   if (item.comingSoon) {
     return (
-      <span className={`${className} cursor-not-allowed opacity-45`} aria-disabled="true" title="Sắp có">
+      <span className={`${className} cursor-not-allowed opacity-45`} aria-disabled="true" title={`${item.label} · Sắp có`}>
         {content}
       </span>
     )

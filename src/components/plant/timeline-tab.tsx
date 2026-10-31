@@ -1,14 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { memo, useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
-import { CameraIcon, CloseIcon, FilmIcon, ImageIcon, PencilIcon, TrashIcon } from '@/components/icons'
+import { memo, useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
+import { CameraIcon, CloseIcon, CollectionIcon, FilmIcon, ImageIcon, PencilIcon, ScissorsIcon, TrashIcon } from '@/components/icons'
+import { LeafCutoutDialog } from '@/components/leaf/leaf-cutout-dialog'
 import { PlantPhoto } from '@/components/plant-photo'
 import { formatDate, getDaysSinceDate, toDateInputValue, type Plant, type TimelineEntry } from '@/lib/garden'
 import { getCachedSignedUrl, warmImages } from '@/lib/photos'
 import {
   useAddTimelinePhotos,
   useDeleteTimelineEntry,
+  useLeafCutouts,
   useUpdateTimelineEntry,
   type UploadProgress,
 } from '@/lib/queries'
@@ -24,7 +26,16 @@ export function TimelineTab({ plant }: { plant: Plant }) {
   const [uploadErrors, setUploadErrors] = useState<string[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [viewing, setViewing] = useState<TimelineEntry | null>(null)
+  const [cutting, setCutting] = useState<TimelineEntry | null>(null)
   const entries = plant.timeline_entries
+  const { data: cutouts } = useLeafCutouts()
+  const cutoutCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const cutout of cutouts ?? []) {
+      if (cutout.plant_id === plant.id) counts.set(cutout.entry_id, (counts.get(cutout.entry_id) ?? 0) + 1)
+    }
+    return counts
+  }, [cutouts, plant.id])
 
   // Khi rảnh, tải sẵn ảnh full của vài lá tiếp theo vào HTTP cache → cuộn xuống là có ngay
   useEffect(() => {
@@ -153,13 +164,24 @@ export function TimelineTab({ plant }: { plant: Plant }) {
               isFirst={index === 0}
               isLast={index === entries.length - 1}
               priority={index < EAGER_COUNT}
+              cutoutCount={cutoutCounts.get(entry.id) ?? 0}
               onView={setViewing}
+              onCut={setCutting}
             />
           ))}
         </ol>
       )}
 
-      <PhotoViewer entry={viewing} plantName={plant.name} onClose={() => setViewing(null)} />
+      <PhotoViewer
+        entry={viewing}
+        plantName={plant.name}
+        onClose={() => setViewing(null)}
+        onCut={(entry) => {
+          setViewing(null)
+          setCutting(entry)
+        }}
+      />
+      <LeafCutoutDialog plant={plant} entry={cutting} onClose={() => setCutting(null)} />
     </div>
   )
 }
@@ -171,7 +193,9 @@ const TimelineEntryCard = memo(function TimelineEntryCard({
   isFirst,
   isLast,
   priority,
+  cutoutCount,
   onView,
+  onCut,
 }: {
   entry: TimelineEntry
   plantName: string
@@ -179,7 +203,9 @@ const TimelineEntryCard = memo(function TimelineEntryCard({
   isFirst: boolean
   isLast: boolean
   priority: boolean
+  cutoutCount: number
   onView: (entry: TimelineEntry) => void
+  onCut: (entry: TimelineEntry) => void
 }) {
   const updateEntry = useUpdateTimelineEntry()
   const deleteEntry = useDeleteTimelineEntry()
@@ -244,6 +270,14 @@ const TimelineEntryCard = memo(function TimelineEntryCard({
             className="aspect-[4/5] w-full"
           />
           <span className="pill absolute top-3 left-3 bg-black/45 text-white backdrop-blur">Lá #{leafNumber}</span>
+          {cutoutCount > 0 ? (
+            <span
+              className="pill absolute top-3 right-3 bg-primary-fixed text-primary shadow"
+              title={`${cutoutCount} lá đã vào bộ sưu tập`}
+            >
+              <CollectionIcon className="h-3 w-3" /> {cutoutCount}
+            </span>
+          ) : null}
         </button>
 
         <div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
@@ -252,6 +286,15 @@ const TimelineEntryCard = memo(function TimelineEntryCard({
               <p className="font-serif text-xl font-semibold text-on-surface">{formatDate(entry.taken_at)}</p>
               <p className="text-xs text-outline">{daysAgo <= 0 ? 'Hôm nay' : `${daysAgo} ngày trước`}</p>
             </div>
+            <button
+              type="button"
+              onClick={() => onCut(entry)}
+              className="btn-icon text-primary hover:bg-secondary-container"
+              aria-label="Tách lá vào bộ sưu tập"
+              title="Tách lá vào bộ sưu tập"
+            >
+              <ScissorsIcon />
+            </button>
             <button
               type="button"
               onClick={() => setIsEditing((value) => !value)}
@@ -329,10 +372,12 @@ function PhotoViewer({
   entry,
   plantName,
   onClose,
+  onCut,
 }: {
   entry: TimelineEntry | null
   plantName: string
   onClose: () => void
+  onCut: (entry: TimelineEntry) => void
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null)
 
@@ -363,6 +408,16 @@ function PhotoViewer({
               <p className="truncate font-serif text-lg font-semibold">{plantName}</p>
               <p className="text-xs text-white/70">{formatDate(entry.taken_at)}</p>
             </div>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onCut(entry)
+              }}
+              className="flex min-h-11 items-center gap-2 rounded-full bg-primary-fixed px-4 text-sm font-semibold text-primary"
+            >
+              <ScissorsIcon /> Tách lá
+            </button>
             <button
               type="button"
               onClick={onClose}

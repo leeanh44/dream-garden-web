@@ -28,10 +28,8 @@ export const loadCanvasFonts = async (): Promise<Scene['fonts']> => {
 
 export const loadLogo = async (): Promise<CanvasImageSource | null> => {
   try {
-    const response = await fetch('/icon.svg')
-    const svg = await response.text()
     const image = new Image()
-    image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+    image.src = '/icons/icon-512.png'
     await image.decode()
     return image
   } catch {

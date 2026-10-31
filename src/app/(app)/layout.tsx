@@ -48,7 +48,7 @@ async function AccountMenu() {
         </span>
       ) : null}
       {email ? (
-        <span className="hidden max-w-44 truncate text-sm text-on-surface-variant lg:inline">{email}</span>
+        <span className="hidden max-w-44 truncate text-sm text-on-surface-variant xl:inline">{email}</span>
       ) : null}
       <button type="submit" className="btn-icon" aria-label="Đăng xuất" title="Đăng xuất">
         <LogoutIcon />

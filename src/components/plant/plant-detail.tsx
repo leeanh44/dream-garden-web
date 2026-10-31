@@ -135,6 +135,9 @@ function PlantHero({ plant }: { plant: Plant }) {
           {plant.is_sold ? (
             <span className="pill bg-tertiary-container text-xs text-on-tertiary-container">Đã xuất</span>
           ) : null}
+          {plant.cultivar ? (
+            <span className="pill bg-white/90 text-xs text-primary">Dòng {plant.cultivar}</span>
+          ) : null}
           <span className="pill bg-white/20 text-xs font-semibold backdrop-blur">{leafCount} lá</span>
           {trackedDays > 0 ? (
             <span className="pill bg-white/20 text-xs font-semibold backdrop-blur">{trackedDays} ngày theo dõi sinh trưởng</span>

@@ -1,4 +1,7 @@
+import Image from 'next/image'
 import type { SVGProps } from 'react'
+import leafArt from '@/assets/brand/icon-leaf.png'
+import logoArt from '@/assets/brand/logo.png'
 
 /**
  * Icon SVG nội tuyến — thay emoji vì emoji lệch baseline / khác nhau giữa các hệ điều hành.
@@ -43,38 +46,40 @@ export function LeafIcon({ size = '1em', className = '', ...props }: IconProps) 
   )
 }
 
-/** Lá + dấu cộng nhỏ — nút "Thêm cây". */
-export function LeafPlusIcon({ size = '1em', className = '', ...props }: IconProps) {
+/** Lá Monstera variegata (ảnh `icon_leaf.png`) — biểu tượng thêm cây / lá. */
+export function LeafArtIcon({ className = '' }: { className?: string }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="8 8 50 50"
-      aria-hidden
-      focusable={false}
-      className={`shrink-0 ${className}`}
-      {...props}
-    >
-      <path d={LEAF_PATH} fill="currentColor" />
-      <circle cx="46" cy="46" r="10" fill="var(--color-primary-fixed)" stroke="var(--color-primary)" strokeWidth="3" />
-      <path d="M46 41v10M41 46h10" stroke="var(--color-primary)" strokeWidth="3.2" strokeLinecap="round" />
-    </svg>
+    <span className={`relative inline-block shrink-0 ${className}`} aria-hidden="true">
+      <Image src={leafArt} alt="" fill sizes="64px" className="object-contain drop-shadow-[0_2px_3px_rgba(0,40,20,0.25)]" />
+    </span>
   )
 }
 
-/** Logo app: ô vuông bo góc + lá (giống favicon). */
-export function AppLogo({ className = '' }: { className?: string }) {
+/** Lá + dấu cộng nhỏ — nút "Thêm cây". */
+export function LeafPlusIcon({ className = '' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 64 64" aria-hidden focusable={false} className={`shrink-0 ${className}`}>
-      <defs>
-        <linearGradient id="dg-logo-bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#006a46" />
-          <stop offset="1" stopColor="#003823" />
-        </linearGradient>
-      </defs>
-      <rect width="64" height="64" rx="18" fill="url(#dg-logo-bg)" />
-      <path d={LEAF_PATH} fill="#9ef4c6" />
-    </svg>
+    <span className={`relative inline-block shrink-0 ${className}`} aria-hidden="true">
+      <Image src={leafArt} alt="" fill sizes="64px" className="object-contain drop-shadow-[0_2px_3px_rgba(0,40,20,0.25)]" />
+      <span className="absolute -right-[12%] -bottom-[12%] flex h-[48%] w-[48%] items-center justify-center rounded-full bg-primary text-white ring-2 ring-white">
+        <svg viewBox="0 0 24 24" className="h-[70%] w-[70%]" fill="none" stroke="currentColor" strokeWidth={3.4} strokeLinecap="round">
+          <path d="M12 6v12M6 12h12" />
+        </svg>
+      </span>
+    </span>
+  )
+}
+
+/** Logo Dream's Garden (ảnh `logo.png`). Bo góc bằng CSS để cắt phần nền trắng ở 4 góc ảnh gốc. */
+export function AppLogo({ className = '', priority = false }: { className?: string; priority?: boolean }) {
+  return (
+    <Image
+      src={logoArt}
+      alt=""
+      aria-hidden="true"
+      sizes="(min-width: 768px) 64px, 48px"
+      priority={priority}
+      className={`shrink-0 rounded-[24%] object-cover ${className}`}
+    />
   )
 }
 
@@ -213,5 +218,49 @@ export const ImageIcon = (props: IconProps) => (
     <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
     <circle cx="9" cy="10" r="1.6" />
     <path d="m20.5 16-4.5-4.5L7 19.5" />
+  </svg>
+)
+
+export const ScissorsIcon = (props: IconProps) => (
+  <svg {...base(props)}>
+    <circle cx="6.5" cy="6.5" r="2.5" />
+    <circle cx="6.5" cy="17.5" r="2.5" />
+    <path d="M8.6 8 20 18.5M8.6 16 20 5.5" />
+  </svg>
+)
+
+/** Bộ sưu tập: các lá xếp chồng */
+export const CollectionIcon = (props: IconProps) => (
+  <svg {...base(props)}>
+    <rect x="3.5" y="6.5" width="13" height="14" rx="2.5" />
+    <path d="M7.5 3.5h10a3 3 0 0 1 3 3v10" />
+    <path d="M13 10.5c-3.6 0-5.5 2-5.5 5.2 0 .6.1 1.2.3 1.7.5-2.4 2-4 4-4.8-1.6 1.2-2.7 2.8-3.3 5.2.5.3 1.1.4 1.8.4 3 0 4.4-2.8 2.7-7.7z" fill="currentColor" stroke="none" />
+  </svg>
+)
+
+export const UndoIcon = (props: IconProps) => (
+  <svg {...base(props)}>
+    <path d="M9 14 4 9l5-5" />
+    <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+  </svg>
+)
+
+export const PlusCircleIcon = (props: IconProps) => (
+  <svg {...base(props)}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M12 8.5v7M8.5 12h7" />
+  </svg>
+)
+
+export const MinusCircleIcon = (props: IconProps) => (
+  <svg {...base(props)}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M8.5 12h7" />
+  </svg>
+)
+
+export const CrownIcon = (props: IconProps) => (
+  <svg {...base({ ...props, fill: 'currentColor', strokeWidth: 0 })}>
+    <path d="M4 8.5 8.5 12 12 5.5 15.5 12 20 8.5 18.5 18h-13zM5.5 19.5h13v1.5h-13z" />
   </svg>
 )

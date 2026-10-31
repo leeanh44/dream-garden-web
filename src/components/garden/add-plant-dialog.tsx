@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
-import { LeafIcon, LeafPlusIcon } from '@/components/icons'
+import { LeafArtIcon, LeafPlusIcon } from '@/components/icons'
 import { Modal } from '@/components/modal'
 import {
   VND_INPUT_PLACEHOLDER,
@@ -14,7 +14,7 @@ import { useCreatePlant } from '@/lib/queries'
 
 export function AddPlantDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
-    <Modal open={open} onClose={onClose} title="Thêm cây" icon={<LeafIcon className="h-6 w-6" />}>
+    <Modal open={open} onClose={onClose} title="Thêm cây" icon={<LeafArtIcon className="h-8 w-8" />}>
       <AddPlantForm onClose={onClose} />
     </Modal>
   )
@@ -92,7 +92,7 @@ function AddPlantForm({ onClose }: { onClose: () => void }) {
           'Đang lưu…'
         ) : (
           <>
-            <LeafPlusIcon className="h-6 w-6 text-primary-fixed" /> Nhập kho
+            <LeafPlusIcon className="h-7 w-7" /> Nhập kho
           </>
         )}
       </button>
