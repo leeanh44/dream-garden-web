@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { ComponentType } from 'react'
-import { CubeIcon, LeafIcon, WalletIcon } from '@/components/icons'
+import { CameraIcon, CubeIcon, LeafIcon, WalletIcon } from '@/components/icons'
 
 type NavItem = {
   href: string
@@ -15,6 +15,7 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { href: '/', label: 'Kho cây', icon: LeafIcon },
+  { href: '/capture', label: 'Chụp nhanh', icon: CameraIcon },
   { href: '/insights', label: 'Giao dịch', icon: WalletIcon, comingSoon: true },
   { href: '/planner', label: 'Vườn 3D', icon: CubeIcon, comingSoon: true },
 ]

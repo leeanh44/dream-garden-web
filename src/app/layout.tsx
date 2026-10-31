@@ -19,6 +19,10 @@ const jakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: APP_NAME,
+  applicationName: APP_NAME,
+  // iOS: mở toàn màn hình khi chạy từ màn hình chính
+  appleWebApp: { capable: true, title: APP_NAME, statusBarStyle: 'default' },
+  formatDetection: { telephone: false },
   description: 'Quản lý bộ sưu tập kiểng lá variegated — nhật ký sinh trưởng, định giá, video timelapse.',
 }
 

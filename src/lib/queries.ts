@@ -147,16 +147,22 @@ export const useDeletePlant = () => {
 
 export type UploadProgress = { done: number; total: number }
 
-export const useAddTimelinePhotos = (plantId: string) => {
+/** `plantId` cố định theo hook, hoặc truyền khi gọi `mutate` (màn Chụp nhanh chọn cây sau khi chụp). */
+export const useAddTimelinePhotos = (defaultPlantId?: string) => {
   const invalidate = useInvalidatePlants()
   return useMutation({
     mutationFn: async ({
       files,
       onProgress,
+      plantId = defaultPlantId,
     }: {
       files: File[]
       onProgress?: (progress: UploadProgress) => void
+      plantId?: string
     }) => {
+      if (!plantId) {
+        throw new Error('Chưa chọn mẫu cây.')
+      }
       const userId = await getCurrentUserId()
       const errors: string[] = []
       let done = 0
