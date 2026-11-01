@@ -9,12 +9,15 @@ export function Modal({
   onClose,
   title,
   icon,
+  plainIcon = false,
   children,
 }: {
   open: boolean
   onClose: () => void
   title: string
   icon?: ReactNode
+  /** Icon là ảnh minh hoạ → hiện trần, không khung nền */
+  plainIcon?: boolean
   children: ReactNode
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -45,7 +48,8 @@ export function Modal({
       <div className="max-h-[88dvh] overflow-y-auto px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+20px)] sm:px-6 sm:pt-6">
         <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-outline-variant sm:hidden" aria-hidden="true" />
         <div className="mb-5 flex items-center gap-3">
-          {icon ? (
+          {icon && plainIcon ? icon : null}
+          {icon && !plainIcon ? (
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary-container text-primary">
               {icon}
             </span>

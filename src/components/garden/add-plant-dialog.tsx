@@ -14,7 +14,7 @@ import { useCreatePlant } from '@/lib/queries'
 
 export function AddPlantDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
-    <Modal open={open} onClose={onClose} title="Thêm cây" icon={<LeafArtIcon className="h-8 w-8" />}>
+    <Modal open={open} onClose={onClose} title="Thêm cây" plainIcon icon={<LeafArtIcon className="-my-2 h-14 w-14" />}>
       <AddPlantForm onClose={onClose} />
     </Modal>
   )
@@ -92,7 +92,7 @@ function AddPlantForm({ onClose }: { onClose: () => void }) {
           'Đang lưu…'
         ) : (
           <>
-            <LeafPlusIcon className="h-7 w-7" /> Nhập kho
+            <LeafPlusIcon className="h-8 w-8" /> Nhập kho
           </>
         )}
       </button>
