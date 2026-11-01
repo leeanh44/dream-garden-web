@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Runtime ONNX vendored từ onnxruntime-web
+    "public/ort/**",
   ]),
 ]);
 

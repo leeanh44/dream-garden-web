@@ -60,7 +60,7 @@ export function LeafPlusIcon({ className = '' }: { className?: string }) {
   return (
     <span className={`relative inline-block shrink-0 ${className}`} aria-hidden="true">
       <Image src={leafArt} alt="" fill sizes="64px" className="object-contain drop-shadow-[0_2px_3px_rgba(0,40,20,0.25)]" />
-      <span className="absolute -right-[12%] -bottom-[12%] flex h-[48%] w-[48%] items-center justify-center rounded-full bg-primary text-white ring-2 ring-white">
+      <span className="absolute -right-[12%] -bottom-[12%] flex h-[42%] w-[42%] items-center justify-center rounded-full bg-primary text-white ring-2 ring-white">
         <svg viewBox="0 0 24 24" className="h-[70%] w-[70%]" fill="none" stroke="currentColor" strokeWidth={3.4} strokeLinecap="round">
           <path d="M12 6v12M6 12h12" />
         </svg>
