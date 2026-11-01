@@ -1,16 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import { memo, useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
-import { CameraIcon, CloseIcon, CollectionIcon, FilmIcon, ImageIcon, PencilIcon, ScissorsIcon, TrashIcon } from '@/components/icons'
-import { LeafCutoutDialog } from '@/components/leaf/leaf-cutout-dialog'
+import { memo, useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
+import { CameraIcon, CloseIcon, FilmIcon, ImageIcon, PencilIcon, StarIcon, StarLineIcon, TrashIcon } from '@/components/icons'
 import { PlantPhoto } from '@/components/plant-photo'
 import { formatDate, getDaysSinceDate, toDateInputValue, type Plant, type TimelineEntry } from '@/lib/garden'
 import { getCachedSignedUrl, warmImages } from '@/lib/photos'
 import {
   useAddTimelinePhotos,
   useDeleteTimelineEntry,
-  useLeafCutouts,
+  useToggleFeatured,
   useUpdateTimelineEntry,
   type UploadProgress,
 } from '@/lib/queries'
@@ -28,16 +27,7 @@ export function TimelineTab({ plant }: { plant: Plant }) {
   const [uploadErrors, setUploadErrors] = useState<string[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [viewing, setViewing] = useState<TimelineEntry | null>(null)
-  const [cutting, setCutting] = useState<TimelineEntry | null>(null)
   const entries = plant.timeline_entries
-  const { data: cutouts } = useLeafCutouts()
-  const cutoutCounts = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const cutout of cutouts ?? []) {
-      if (cutout.plant_id === plant.id) counts.set(cutout.entry_id, (counts.get(cutout.entry_id) ?? 0) + 1)
-    }
-    return counts
-  }, [cutouts, plant.id])
 
   // Khi rảnh, tải sẵn ảnh full của vài lá tiếp theo vào HTTP cache → cuộn xuống là có ngay
   useEffect(() => {
@@ -182,24 +172,18 @@ export function TimelineTab({ plant }: { plant: Plant }) {
               isFirst={index === 0}
               isLast={index === entries.length - 1}
               priority={index < EAGER_COUNT}
-              cutoutCount={cutoutCounts.get(entry.id) ?? 0}
               onView={setViewing}
-              onCut={setCutting}
             />
           ))}
         </ol>
       )}
 
       <PhotoViewer
-        entry={viewing}
+        // Lấy bản mới nhất từ cache để trạng thái ngôi sao luôn đúng
+        entry={viewing ? (entries.find((entry) => entry.id === viewing.id) ?? null) : null}
         plantName={plant.name}
         onClose={() => setViewing(null)}
-        onCut={(entry) => {
-          setViewing(null)
-          setCutting(entry)
-        }}
       />
-      <LeafCutoutDialog plant={plant} entry={cutting} onClose={() => setCutting(null)} />
     </div>
   )
 }
@@ -211,9 +195,7 @@ const TimelineEntryCard = memo(function TimelineEntryCard({
   isFirst,
   isLast,
   priority,
-  cutoutCount,
   onView,
-  onCut,
 }: {
   entry: TimelineEntry
   plantName: string
@@ -221,12 +203,11 @@ const TimelineEntryCard = memo(function TimelineEntryCard({
   isFirst: boolean
   isLast: boolean
   priority: boolean
-  cutoutCount: number
   onView: (entry: TimelineEntry) => void
-  onCut: (entry: TimelineEntry) => void
 }) {
   const updateEntry = useUpdateTimelineEntry()
   const deleteEntry = useDeleteTimelineEntry()
+  const toggleFeatured = useToggleFeatured()
   const [isEditing, setIsEditing] = useState(false)
   const [note, setNote] = useState(entry.note ?? '')
   const [takenAt, setTakenAt] = useState(() => toDateInputValue(entry.taken_at))
@@ -288,12 +269,9 @@ const TimelineEntryCard = memo(function TimelineEntryCard({
             className="aspect-[4/5] w-full"
           />
           <span className="pill absolute top-3 left-3 bg-black/45 text-white backdrop-blur">Lá #{leafNumber}</span>
-          {cutoutCount > 0 ? (
-            <span
-              className="pill absolute top-3 right-3 bg-primary-fixed text-primary shadow"
-              title={`${cutoutCount} lá đã vào bộ sưu tập`}
-            >
-              <CollectionIcon className="h-3 w-3" /> {cutoutCount}
+          {entry.featured_at ? (
+            <span className="pill absolute top-3 right-3 bg-primary-fixed text-primary shadow">
+              <StarIcon className="h-3 w-3" /> Bộ sưu tập
             </span>
           ) : null}
         </button>
@@ -306,12 +284,13 @@ const TimelineEntryCard = memo(function TimelineEntryCard({
             </div>
             <button
               type="button"
-              onClick={() => onCut(entry)}
-              className="btn-icon text-primary hover:bg-secondary-container"
-              aria-label="Tách lá vào bộ sưu tập"
-              title="Tách lá vào bộ sưu tập"
+              onClick={() => toggleFeatured.mutate({ entry, featured: !entry.featured_at })}
+              className={`btn-icon ${entry.featured_at ? 'text-[#c98a00]' : 'hover:text-[#c98a00]'}`}
+              aria-pressed={Boolean(entry.featured_at)}
+              aria-label={entry.featured_at ? 'Gỡ khỏi bộ sưu tập' : 'Lưu vào bộ sưu tập'}
+              title={entry.featured_at ? 'Gỡ khỏi bộ sưu tập' : 'Lưu vào bộ sưu tập (ảnh đẹp nhất)'}
             >
-              <ScissorsIcon />
+              {entry.featured_at ? <StarIcon /> : <StarLineIcon />}
             </button>
             <button
               type="button"
@@ -333,6 +312,7 @@ const TimelineEntryCard = memo(function TimelineEntryCard({
               <TrashIcon />
             </button>
           </div>
+          {toggleFeatured.error ? <p className="mt-2 text-xs text-error">{toggleFeatured.error.message}</p> : null}
 
           {isEditing ? (
             <div className="mt-4 space-y-3">
@@ -390,14 +370,13 @@ function PhotoViewer({
   entry,
   plantName,
   onClose,
-  onCut,
 }: {
   entry: TimelineEntry | null
   plantName: string
   onClose: () => void
-  onCut: (entry: TimelineEntry) => void
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const toggleFeatured = useToggleFeatured()
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -425,16 +404,21 @@ function PhotoViewer({
             <div className="min-w-0 flex-1">
               <p className="truncate font-serif text-lg font-semibold">{plantName}</p>
               <p className="text-xs text-white/70">{formatDate(entry.taken_at)}</p>
+              {toggleFeatured.error ? <p className="text-xs text-red-300">{toggleFeatured.error.message}</p> : null}
             </div>
             <button
               type="button"
               onClick={(event) => {
                 event.stopPropagation()
-                onCut(entry)
+                toggleFeatured.mutate({ entry, featured: !entry.featured_at })
               }}
-              className="flex min-h-11 items-center gap-2 rounded-full bg-primary-fixed px-4 text-sm font-semibold text-primary"
+              aria-pressed={Boolean(entry.featured_at)}
+              className={`flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold transition-colors ${
+                entry.featured_at ? 'bg-primary-fixed text-primary' : 'bg-white/15 text-white hover:bg-white/25'
+              }`}
             >
-              <ScissorsIcon /> Tách lá
+              {entry.featured_at ? <StarIcon className="text-[#c98a00]" /> : <StarLineIcon />}
+              {entry.featured_at ? 'Đã lưu' : 'Bộ sưu tập'}
             </button>
             <button
               type="button"

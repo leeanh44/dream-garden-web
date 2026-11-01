@@ -221,46 +221,18 @@ export const ImageIcon = (props: IconProps) => (
   </svg>
 )
 
-export const ScissorsIcon = (props: IconProps) => (
+/** Ngôi sao viền — trạng thái chưa lưu vào Bộ sưu tập */
+export const StarLineIcon = (props: IconProps) => (
   <svg {...base(props)}>
-    <circle cx="6.5" cy="6.5" r="2.5" />
-    <circle cx="6.5" cy="17.5" r="2.5" />
-    <path d="M8.6 8 20 18.5M8.6 16 20 5.5" />
+    <path d="m12 3.2 2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.6l-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z" />
   </svg>
 )
 
-/** Bộ sưu tập: các lá xếp chồng */
+/** Bộ sưu tập: các ảnh xếp chồng */
 export const CollectionIcon = (props: IconProps) => (
   <svg {...base(props)}>
     <rect x="3.5" y="6.5" width="13" height="14" rx="2.5" />
     <path d="M7.5 3.5h10a3 3 0 0 1 3 3v10" />
     <path d="M13 10.5c-3.6 0-5.5 2-5.5 5.2 0 .6.1 1.2.3 1.7.5-2.4 2-4 4-4.8-1.6 1.2-2.7 2.8-3.3 5.2.5.3 1.1.4 1.8.4 3 0 4.4-2.8 2.7-7.7z" fill="currentColor" stroke="none" />
-  </svg>
-)
-
-export const UndoIcon = (props: IconProps) => (
-  <svg {...base(props)}>
-    <path d="M9 14 4 9l5-5" />
-    <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
-  </svg>
-)
-
-export const PlusCircleIcon = (props: IconProps) => (
-  <svg {...base(props)}>
-    <circle cx="12" cy="12" r="8.5" />
-    <path d="M12 8.5v7M8.5 12h7" />
-  </svg>
-)
-
-export const MinusCircleIcon = (props: IconProps) => (
-  <svg {...base(props)}>
-    <circle cx="12" cy="12" r="8.5" />
-    <path d="M8.5 12h7" />
-  </svg>
-)
-
-export const CrownIcon = (props: IconProps) => (
-  <svg {...base({ ...props, fill: 'currentColor', strokeWidth: 0 })}>
-    <path d="M4 8.5 8.5 12 12 5.5 15.5 12 20 8.5 18.5 18h-13zM5.5 19.5h13v1.5h-13z" />
   </svg>
 )

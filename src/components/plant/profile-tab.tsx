@@ -65,7 +65,7 @@ export function ProfileTab({ plant }: { plant: Plant }) {
         <h2 className="font-serif text-2xl font-semibold text-on-surface">Hồ sơ mẫu cây</h2>
         <PlantNameFields values={names} onChange={setNames} />
         <p className="-mt-2 text-xs text-outline">
-          Gõ tên Việt để chọn danh pháp đúng. Các cây cùng danh pháp & dòng được gom chung trong Bộ sưu tập lá.
+          Gõ tên Việt để chọn danh pháp đúng. Các cây cùng danh pháp & dòng được gom chung trong Bộ sưu tập.
         </p>
 
         <div className="rounded-2xl bg-surface-container-low p-4">

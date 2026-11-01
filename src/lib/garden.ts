@@ -43,6 +43,8 @@ export type TimelineEntry = {
   thumb_path: string | null
   taken_at: string
   note: string | null
+  /** Đã đưa vào Bộ sưu tập (ảnh đẹp nhất) — null nếu chưa. Cần migration 0003. */
+  featured_at?: string | null
   created_at: string
 }
 
@@ -67,24 +69,8 @@ export type Plant = {
   timeline_entries: TimelineEntry[]
 }
 
-/** Lá đã tách nền (bảng `leaf_cutouts`). */
-export type LeafCutout = {
-  id: string
-  plant_id: string
-  entry_id: string
-  cutout_path: string
-  thumb_path: string | null
-  width: number
-  height: number
-  /** 0–1 */
-  var_ratio: number | null
-  points: { x: number; y: number; label: 0 | 1 }[] | null
-  created_at: string
-}
-
-/** Khoá gom "dòng": cultivar → tên khoa học → tên cây. */
 /**
- * Dòng cây để gom Bộ sưu tập lá: theo danh pháp + dòng (vd. Monstera deliciosa 'Albo'),
+ * Dòng cây để gom Bộ sưu tập: theo danh pháp + dòng (vd. Monstera deliciosa 'Albo'),
  * không có danh pháp thì theo dòng / tên Việt.
  */
 export const getPlantLine = (plant: Pick<Plant, 'cultivar' | 'scientific_name' | 'name'>) => {
@@ -96,8 +82,6 @@ export const getPlantLine = (plant: Pick<Plant, 'cultivar' | 'scientific_name' |
     display: display.latin ? display : { ...display, title, latin: null, cultivar: null },
   }
 }
-
-export const formatVarRatio = (ratio: number | null) => (ratio == null ? '—' : `${Math.round(ratio * 100)}%`)
 
 export type PlantSortMode = 'name' | 'createdAt'
 export type PlantRankFilter = 'all' | 'top1' | 'top2' | 'top3'
