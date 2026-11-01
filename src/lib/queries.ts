@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
-import { sortTimelineEntries, type LeafCutout, type Plant, type TimelineEntry } from '@/lib/garden'
+import { sortTimelineEntries, type Plant, type TimelineEntry } from '@/lib/garden'
 import {
   PHOTOS_BUCKET,
   PHOTO_CACHE_CONTROL,
@@ -15,7 +15,6 @@ import {
 } from '@/lib/photos'
 
 const PLANTS_QUERY_KEY = ['plants'] as const
-const CUTOUTS_QUERY_KEY = ['leaf-cutouts'] as const
 
 const supabase = () => getSupabaseBrowserClient()
 
@@ -103,18 +102,6 @@ const useInvalidatePlants = () => {
   return () => queryClient.invalidateQueries({ queryKey: PLANTS_QUERY_KEY })
 }
 
-const useInvalidateCutouts = () => {
-  const queryClient = useQueryClient()
-  return () => queryClient.invalidateQueries({ queryKey: CUTOUTS_QUERY_KEY })
-}
-
-/** Đường dẫn file của các lá đã tách — xoá cùng khi xoá cây / ảnh (DB tự xoá dòng qua cascade). */
-const getCutoutFiles = async (filter: { plant_id: string } | { entry_id: string }) => {
-  const [column, value] = Object.entries(filter)[0]
-  const { data } = await supabase().from('leaf_cutouts').select('cutout_path, thumb_path').eq(column, value)
-  return (data ?? []).map((row) => ({ photo_path: row.cutout_path as string, thumb_path: row.thumb_path as string | null }))
-}
-
 export const useCreatePlant = () => {
   const invalidate = useInvalidatePlants()
   return useMutation({
@@ -146,17 +133,12 @@ const removePhotoFiles = async (entries: Pick<TimelineEntry, 'photo_path' | 'thu
 
 export const useDeletePlant = () => {
   const invalidate = useInvalidatePlants()
-  const invalidateCutouts = useInvalidateCutouts()
   return useMutation({
     mutationFn: async (plant: Plant) => {
-      const cutouts = await getCutoutFiles({ plant_id: plant.id })
       throwIfError(await supabase().from('plants').delete().eq('id', plant.id))
-      await removePhotoFiles([...plant.timeline_entries, ...cutouts])
+      await removePhotoFiles(plant.timeline_entries)
     },
-    onSuccess: () => {
-      invalidate()
-      invalidateCutouts()
-    },
+    onSuccess: invalidate,
   })
 }
 
@@ -246,93 +228,50 @@ export const useUpdateTimelineEntry = () => {
 
 export const useDeleteTimelineEntry = () => {
   const invalidate = useInvalidatePlants()
-  const invalidateCutouts = useInvalidateCutouts()
   return useMutation({
     mutationFn: async (entry: TimelineEntry) => {
-      const cutouts = await getCutoutFiles({ entry_id: entry.id })
       throwIfError(await supabase().from('timeline_entries').delete().eq('id', entry.id))
-      await removePhotoFiles([entry, ...cutouts])
+      await removePhotoFiles([entry])
     },
-    onSuccess: () => {
-      invalidate()
-      invalidateCutouts()
-    },
+    onSuccess: invalidate,
   })
 }
 
 // ---------------------------------------------------------------------------
-// Bộ sưu tập lá (lá đã tách nền)
+// Bộ sưu tập — đánh dấu ảnh đẹp nhất
 // ---------------------------------------------------------------------------
 
-const fetchLeafCutouts = async (): Promise<LeafCutout[]> => {
-  const rows = throwIfError(
-    await supabase().from('leaf_cutouts').select('*').order('created_at', { ascending: false }),
-  ) as LeafCutout[]
-  primeSignedUrls(rows.map((row) => row.thumb_path ?? row.cutout_path))
-  return rows
-}
+/** Đưa ảnh vào / gỡ khỏi Bộ sưu tập. Cập nhật lạc quan để ngôi sao đổi ngay khi bấm. */
+export const useToggleFeatured = () => {
+  const queryClient = useQueryClient()
+  const setFeatured = (entryId: string, featuredAt: string | null) =>
+    queryClient.setQueryData<Plant[]>(PLANTS_QUERY_KEY, (plants) =>
+      plants?.map((plant) => ({
+        ...plant,
+        timeline_entries: plant.timeline_entries.map((entry) =>
+          entry.id === entryId ? { ...entry, featured_at: featuredAt } : entry,
+        ),
+      })),
+    )
 
-export const useLeafCutouts = () => useQuery({ queryKey: CUTOUTS_QUERY_KEY, queryFn: fetchLeafCutouts })
-
-export type CreateLeafCutoutInput = {
-  plantId: string
-  entryId: string
-  full: Blob
-  thumb: Blob
-  extension: 'webp' | 'png'
-  width: number
-  height: number
-  varRatio: number
-  points: LeafCutout['points']
-}
-
-export const useCreateLeafCutout = () => {
-  const invalidate = useInvalidateCutouts()
   return useMutation({
-    mutationFn: async (input: CreateLeafCutoutInput) => {
-      const userId = await getCurrentUserId()
-      const id = crypto.randomUUID()
-      const contentType = input.extension === 'webp' ? 'image/webp' : 'image/png'
-      const cutoutPath = `${userId}/${input.plantId}/cutouts/${id}.${input.extension}`
-      const thumbPath = `${userId}/${input.plantId}/cutouts/${id}_thumb.${input.extension}`
-      const bucket = supabase().storage.from(PHOTOS_BUCKET)
-      const options = { contentType, cacheControl: PHOTO_CACHE_CONTROL }
-
-      try {
-        await Promise.all([
-          bucket.upload(cutoutPath, input.full, options).then(throwIfError),
-          bucket.upload(thumbPath, input.thumb, options).then(throwIfError),
-        ])
-        throwIfError(
-          await supabase().from('leaf_cutouts').insert({
-            id,
-            plant_id: input.plantId,
-            entry_id: input.entryId,
-            cutout_path: cutoutPath,
-            thumb_path: thumbPath,
-            width: input.width,
-            height: input.height,
-            var_ratio: Math.round(input.varRatio * 1000) / 1000,
-            points: input.points,
-          }),
+    mutationFn: async ({ entry, featured }: { entry: TimelineEntry; featured: boolean }) => {
+      const { error } = await supabase()
+        .from('timeline_entries')
+        .update({ featured_at: featured ? new Date().toISOString() : null })
+        .eq('id', entry.id)
+      if (error) {
+        throw new Error(
+          /featured_at/.test(error.message)
+            ? 'Cơ sở dữ liệu chưa có Bộ sưu tập — cần chạy migration 0003_featured_photos.sql.'
+            : error.message,
         )
-      } catch (error) {
-        await bucket.remove([cutoutPath, thumbPath])
-        throw error
       }
-      return { id }
     },
-    onSuccess: invalidate,
-  })
-}
-
-export const useDeleteLeafCutout = () => {
-  const invalidate = useInvalidateCutouts()
-  return useMutation({
-    mutationFn: async (cutout: LeafCutout) => {
-      throwIfError(await supabase().from('leaf_cutouts').delete().eq('id', cutout.id))
-      await removePhotoFiles([{ photo_path: cutout.cutout_path, thumb_path: cutout.thumb_path }])
+    onMutate: ({ entry, featured }) => {
+      setFeatured(entry.id, featured ? new Date().toISOString() : null)
+      return { previous: entry.featured_at ?? null }
     },
-    onSuccess: invalidate,
+    onError: (_error, { entry }, context) => setFeatured(entry.id, context?.previous ?? null),
   })
 }

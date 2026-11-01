@@ -10,7 +10,7 @@ Bản web của app iOS **Dream's Garden** (`../garden-app`): quản lý vườn
 |---|---|---|
 | 1 | Đăng nhập, Kho cây, Chi tiết cây (Nhật ký lá + Hồ sơ), upload ảnh | ✅ |
 | 2 | Video timelapse từ Nhật ký lá (9:16 · 1:1 · 16:9, MP4) | ✅ |
-| 2.5 | PWA (cài lên điện thoại, Chụp nhanh) · Bộ sưu tập lá (AI tách nền, % var) | ✅ |
+| 2.5 | PWA (cài lên điện thoại, Chụp nhanh) · Bộ sưu tập ảnh đẹp nhất · Gợi ý tên khoa học | ✅ |
 | 3 | Gemini AI, tab Xuất, tab Giao dịch | ⏳ |
 | 4 | Thiết kế vườn 3D | ⏳ |
 
@@ -19,7 +19,7 @@ Bản web của app iOS **Dream's Garden** (`../garden-app`): quản lý vườn
 ### 1. Supabase
 
 1. Tạo project tại [supabase.com](https://supabase.com) (free tier).
-2. **SQL Editor** → lần lượt chạy [`0001_init.sql`](supabase/migrations/0001_init.sql) rồi [`0002_leaf_collection.sql`](supabase/migrations/0002_leaf_collection.sql) trong `supabase/migrations/`. Tạo bảng, RLS, bucket `plant-photos` (private) và bảng `leaf_cutouts` cho Bộ sưu tập lá.
+2. **SQL Editor** → lần lượt chạy [`0001_init.sql`](supabase/migrations/0001_init.sql) rồi [`0003_featured_photos.sql`](supabase/migrations/0003_featured_photos.sql) trong `supabase/migrations/`. Tạo bảng, RLS, bucket `plant-photos` (private) cùng cột `cultivar` và `featured_at` (Bộ sưu tập). (`0002_leaf_collection.sql` thuộc tính năng tách lá đã gỡ — không cần chạy.)
 3. **Authentication → URL Configuration**
    - Site URL: `http://localhost:3000` (đổi sang domain Vercel khi deploy)
    - Redirect URLs: `http://localhost:3000/auth/callback`, `https://<domain>.vercel.app/auth/callback`
@@ -81,8 +81,6 @@ src/
 
 - **Ảnh:** nén trên trình duyệt trước khi upload — bản full ≤2048px + thumbnail ≤480px (JPEG). Ngày chụp đọc từ EXIF (`exifr`). Bucket private, đọc qua signed URL (gom nhiều ảnh thành 1 request, cache ~50 phút). Đường dẫn: `{user_id}/{plant_id}/{uuid}.jpg`.
 - **Video (`src/lib/video/`):** render + encode hoàn toàn trên trình duyệt — canvas vẽ từng frame (`scene.ts`, dùng chung cho preview và xuất), [Mediabunny](https://mediabunny.dev) + WebCodecs mã hoá MP4/H.264 (fallback WebM nếu không có H.264). Chỉ giải mã ~4 ảnh quanh vị trí đang phát để chạy được trên điện thoại.
-- **Tách lá (`src/lib/leaf/`):** Segment Anything (SlimSAM, `@huggingface/transformers`) chạy trong Web Worker, hoàn toàn trên thiết bị. Mặt nạ chỉ thêm kênh alpha cho ảnh gốc — không vẽ lại pixel nên mảng var giữ nguyên. Mặc định chọn mức "cả vật thể" vì SAM hay tách mảng xanh / mảng var thành hai vật. % var = tỉ lệ pixel trắng/kem/vàng trong lá (ước tính). Mô hình ~15MB tải từ HuggingFace lần đầu rồi được cache.
-- **Cross-origin isolation:** `next.config.ts` đặt `COOP: same-origin` + `COEP: credentialless` để WASM chạy đa luồng (nhanh ~2,5 lần). Runtime ONNX phục vụ từ `public/ort/` (copy từ `onnxruntime-web`, cập nhật khi nâng `@huggingface/transformers`). Mọi tài nguyên bên thứ ba cần tải qua CORS hoặc không kèm cookie.
 - **Service worker:** không cache script Web Worker — Turbopack truyền danh sách chunk qua `#params` mà Cache API bỏ qua.
 - **Bảo mật:** RLS trên mọi bảng + storage policy theo thư mục `user_id`.
 - **Font:** Lora thay Libre Caslon Text của app vì Caslon không có glyph tiếng Việt. Body vẫn là Plus Jakarta Sans.

@@ -66,6 +66,6 @@ const redirectWithCookies = (url: URL, source: NextResponse) => {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|ort/|sw\\.js|offline\\.html|manifest\\.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sw\\.js|offline\\.html|manifest\\.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)',
   ],
 }
