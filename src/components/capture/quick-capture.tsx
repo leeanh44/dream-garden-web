@@ -8,7 +8,8 @@ import { PlantPhoto } from '@/components/plant-photo'
 import { getDaysSinceDate, getLatestTimelineEntry, getPlantLastPhotoAt, type Plant } from '@/lib/garden'
 import { useAddTimelinePhotos, usePlants, type UploadProgress } from '@/lib/queries'
 
-const ACCEPTED_TYPES = 'image/jpeg,image/png,image/webp,image/heic,image/heif'
+/** `image/*` → điện thoại mở thẳng thư viện ảnh / camera thay vì trình chọn tệp */
+const ACCEPTED_TYPES = 'image/*'
 
 /** Chụp lá trước, chọn mẫu cây sau — luồng nhanh khi đứng trước kệ cây. */
 export function QuickCapture() {

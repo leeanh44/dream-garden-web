@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { memo, useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
-import { CameraIcon, CloseIcon, CollectionIcon, FilmIcon, ImageIcon, PencilIcon, ScissorsIcon, TrashIcon } from '@/components/icons'
+import { CameraIcon, LeafPlusIcon, CloseIcon, CollectionIcon, FilmIcon, ImageIcon, PencilIcon, ScissorsIcon, TrashIcon } from '@/components/icons'
 import { LeafCutoutDialog } from '@/components/leaf/leaf-cutout-dialog'
 import { PlantPhoto } from '@/components/plant-photo'
 import { formatDate, getDaysSinceDate, toDateInputValue, type Plant, type TimelineEntry } from '@/lib/garden'
@@ -15,12 +15,14 @@ import {
   type UploadProgress,
 } from '@/lib/queries'
 
-const ACCEPTED_TYPES = 'image/jpeg,image/png,image/webp,image/heic,image/heif'
+/** `image/*` → điện thoại mở thẳng thư viện ảnh / camera thay vì trình chọn tệp */
+const ACCEPTED_TYPES = 'image/*'
 /** Số ảnh đầu tiên tải ưu tiên cao */
 const EAGER_COUNT = 2
 
 export function TimelineTab({ plant }: { plant: Plant }) {
-  const inputRef = useRef<HTMLInputElement>(null)
+  const libraryRef = useRef<HTMLInputElement>(null)
+  const cameraRef = useRef<HTMLInputElement>(null)
   const addPhotos = useAddTimelinePhotos(plant.id)
   const [progress, setProgress] = useState<UploadProgress | null>(null)
   const [uploadErrors, setUploadErrors] = useState<string[]>([])
@@ -97,18 +99,35 @@ export function TimelineTab({ plant }: { plant: Plant }) {
         </div>
       ) : null}
 
-      <input ref={inputRef} type="file" accept={ACCEPTED_TYPES} multiple hidden onChange={handleFiles} />
+      <input ref={libraryRef} type="file" accept={ACCEPTED_TYPES} multiple hidden onChange={handleFiles} />
+      <input ref={cameraRef} type="file" accept={ACCEPTED_TYPES} capture="environment" hidden onChange={handleFiles} />
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={addPhotos.isPending}
-          className="btn-primary"
-        >
-          <CameraIcon className="text-lg" />
-          {progress ? `Đang tải ${progress.done}/${progress.total}…` : 'Ghi nhận ảnh lá'}
-        </button>
+        {progress ? (
+          <span className="btn-primary pointer-events-none opacity-80">
+            Đang tải {progress.done}/{progress.total}…
+          </span>
+        ) : (
+          <>
+            {/* Camera chỉ có nghĩa trên thiết bị cảm ứng; desktop `capture` bị bỏ qua → ẩn */}
+            <button
+              type="button"
+              onClick={() => cameraRef.current?.click()}
+              disabled={addPhotos.isPending}
+              className="btn-primary hidden pointer-coarse:inline-flex"
+            >
+              <CameraIcon className="text-lg" /> Chụp lá mới
+            </button>
+            <button
+              type="button"
+              onClick={() => libraryRef.current?.click()}
+              disabled={addPhotos.isPending}
+              className="btn-secondary"
+            >
+              <LeafPlusIcon className="-my-1 h-7 w-7" /> Thêm ảnh lá
+            </button>
+          </>
+        )}
         {entries.length >= 2 ? (
           <Link href={`/plants/${plant.id}/video`} className="btn-secondary">
             <FilmIcon className="text-lg" /> Tạo video
@@ -140,19 +159,15 @@ export function TimelineTab({ plant }: { plant: Plant }) {
       ) : null}
 
       {entries.length === 0 ? (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className="flex w-full flex-col items-center gap-3 rounded-3xl border-2 border-dashed border-outline-variant bg-surface-container-lowest/60 px-6 py-14 text-center transition-colors hover:border-primary hover:bg-secondary-container/30"
-        >
+        <div className="flex w-full flex-col items-center gap-3 rounded-3xl border-2 border-dashed border-outline-variant bg-surface-container-lowest/60 px-6 py-14 text-center">
           <span className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary-container text-3xl text-primary">
             <CameraIcon />
           </span>
           <span className="font-serif text-xl font-semibold text-primary">Chưa có dữ liệu sinh trưởng</span>
           <span className="max-w-sm text-sm text-on-surface-variant">
-            Bấm hoặc kéo thả ảnh để bắt đầu nhật ký. Ngày chụp được lấy tự động từ dữ liệu EXIF.
+            Chụp lá mới hoặc thêm ảnh có sẵn để bắt đầu nhật ký. Ngày chụp được lấy tự động từ dữ liệu EXIF.
           </span>
-        </button>
+        </div>
       ) : (
         <ol className="sm:grid sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
           {entries.map((entry, index) => (
