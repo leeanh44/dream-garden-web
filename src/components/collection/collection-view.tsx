@@ -7,12 +7,21 @@ import { PlantPhoto } from '@/components/plant-photo'
 import { formatDate, formatVarRatio, getPlantLine, type LeafCutout, type Plant } from '@/lib/garden'
 import { useDeleteLeafCutout, useLeafCutouts, usePlants } from '@/lib/queries'
 import { useLocalStorageState } from '@/lib/use-local-storage'
+import { PlantTitle } from '@/components/scientific-name'
+import { getPlantDisplayName } from '@/lib/plant-names'
 
 type SortMode = 'var' | 'newest'
 const SORT_MODES = ['var', 'newest'] as const
 
 type Item = { cutout: LeafCutout; plant: Plant; takenAt: string | null }
-type Line = { key: string; title: string; subtitle: string | null; items: Item[]; bestVar: number | null }
+type Line = {
+  key: string
+  title: string
+  display: ReturnType<typeof getPlantLine>['display']
+  subtitle: string | null
+  items: Item[]
+  bestVar: number | null
+}
 
 const sortItems = (items: Item[], mode: SortMode) =>
   [...items].sort((left, right) =>
@@ -35,14 +44,15 @@ export function CollectionView() {
     for (const cutout of cutoutsQuery.data ?? []) {
       const plant = plantsById.get(cutout.plant_id)
       if (!plant) continue
-      const { key, title } = getPlantLine(plant)
+      const { key, title, display } = getPlantLine(plant)
       const takenAt = plant.timeline_entries.find((entry) => entry.id === cutout.entry_id)?.taken_at ?? null
       let line = groups.get(key)
       if (!line) {
         line = {
           key,
           title,
-          subtitle: plant.cultivar?.trim() ? plant.scientific_name : null,
+          display,
+          subtitle: display.vernacular,
           items: [],
           bestVar: null,
         }
@@ -151,10 +161,10 @@ export function CollectionView() {
               <section key={line.key}>
                 <div className="mb-4 flex items-end justify-between gap-4">
                   <div className="min-w-0">
-                    <h2 className="truncate font-serif text-2xl font-semibold text-on-surface">{line.title}</h2>
-                    {line.subtitle ? (
-                      <p className="truncate font-serif text-sm text-outline italic">{line.subtitle}</p>
-                    ) : null}
+                    <h2 className="truncate font-serif text-2xl font-semibold text-on-surface">
+                      <PlantTitle display={line.display} />
+                    </h2>
+                    {line.subtitle ? <p className="truncate text-sm text-outline">{line.subtitle}</p> : null}
                   </div>
                   <p className="shrink-0 text-xs text-on-surface-variant">
                     {line.items.length} lá · var tối đa{' '}
@@ -279,10 +289,12 @@ function LeafViewer({ item, onClose }: { item: Item | null; onClose: () => void 
           <div className="flex flex-col gap-4 p-5 pb-[calc(env(safe-area-inset-bottom)+20px)] sm:p-6">
             <div className="flex items-start gap-2">
               <div className="min-w-0 flex-1">
-                <p className="eyebrow">{getPlantLine(item.plant).title}</p>
-                <h2 className="font-serif text-2xl font-semibold text-on-surface">{item.plant.name}</h2>
-                {item.plant.scientific_name ? (
-                  <p className="font-serif text-sm text-outline italic">{item.plant.scientific_name}</p>
+                <p className="eyebrow">Bộ sưu tập lá</p>
+                <h2 className="font-serif text-2xl font-semibold text-on-surface">
+                  <PlantTitle display={getPlantDisplayName(item.plant)} />
+                </h2>
+                {getPlantDisplayName(item.plant).vernacular ? (
+                  <p className="text-sm text-outline">{getPlantDisplayName(item.plant).vernacular}</p>
                 ) : null}
               </div>
               <button type="button" onClick={onClose} className="btn-icon -mr-2 hidden sm:inline-flex" aria-label="Đóng">

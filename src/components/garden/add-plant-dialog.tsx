@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
 import { LeafArtIcon, LeafPlusIcon } from '@/components/icons'
 import { Modal } from '@/components/modal'
+import { PlantNameFields, type PlantNameValues } from '@/components/plant/plant-name-fields'
 import {
   VND_INPUT_PLACEHOLDER,
   formatPriceInput,
@@ -23,7 +24,7 @@ export function AddPlantDialog({ open, onClose }: { open: boolean; onClose: () =
 function AddPlantForm({ onClose }: { onClose: () => void }) {
   const router = useRouter()
   const createPlant = useCreatePlant()
-  const [name, setName] = useState('')
+  const [names, setNames] = useState<PlantNameValues>({ name: '', scientific: '', cultivar: '' })
   const [price, setPrice] = useState('')
   const [purchasedAt, setPurchasedAt] = useState(() => toDateInputValue(new Date()))
 
@@ -31,7 +32,9 @@ function AddPlantForm({ onClose }: { onClose: () => void }) {
     event.preventDefault()
     createPlant.mutate(
       {
-        name: name.trim(),
+        name: names.name.trim(),
+        scientific_name: names.scientific.trim() || null,
+        cultivar: names.cultivar.trim() || null,
         purchase_price: parseVndAmount(price),
         purchased_at: purchasedAt || null,
       },
@@ -47,17 +50,7 @@ function AddPlantForm({ onClose }: { onClose: () => void }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <p className="-mt-2 text-sm text-on-surface-variant">Sau khi nhập kho, có thể ghi nhận ảnh lá vào Nhật ký ngay.</p>
-      <label className="block">
-        <span className="field-label">Tên cây</span>
-        <input
-          required
-          autoFocus
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          className="field-input"
-          placeholder="Monstera Thai Constellation"
-        />
-      </label>
+      <PlantNameFields values={names} onChange={setNames} autoFocus />
 
       <div className="grid gap-3 min-[380px]:grid-cols-2">
         <label className="block">
@@ -87,7 +80,7 @@ function AddPlantForm({ onClose }: { onClose: () => void }) {
         </p>
       ) : null}
 
-      <button type="submit" disabled={createPlant.isPending || !name.trim()} className="btn-primary w-full">
+      <button type="submit" disabled={createPlant.isPending || !names.name.trim()} className="btn-primary w-full">
         {createPlant.isPending ? (
           'Đang lưu…'
         ) : (

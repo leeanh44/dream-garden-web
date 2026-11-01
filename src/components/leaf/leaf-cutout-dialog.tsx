@@ -16,6 +16,7 @@ import { getSamClient, type ModelProgress, type SamMasks } from '@/lib/leaf/sam-
 import type { SamPoint } from '@/lib/leaf/sam-protocol'
 import { getSignedPhotoUrl } from '@/lib/photos'
 import { useCreateLeafCutout } from '@/lib/queries'
+import { getPlantDisplayName } from '@/lib/plant-names'
 
 const LEVEL_LABELS = ['Chi tiết', 'Vừa', 'Cả lá']
 
@@ -295,7 +296,7 @@ function CutoutEditor({
           <ScissorsIcon />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-serif text-lg leading-tight font-semibold">Tách lá · {plant.name}</p>
+          <p className="truncate font-serif text-lg leading-tight font-semibold">Tách lá · {getPlantDisplayName(plant).title}</p>
           <p className="text-xs text-white/60">Ảnh ngày {formatDate(entry.taken_at)}</p>
         </div>
         <button

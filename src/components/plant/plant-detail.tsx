@@ -15,6 +15,8 @@ import {
   type Plant,
 } from '@/lib/garden'
 import { usePlant } from '@/lib/queries'
+import { PlantTitle } from '@/components/scientific-name'
+import { getPlantDisplayName } from '@/lib/plant-names'
 
 type DetailTab = 'timeline' | 'profile' | 'trade'
 
@@ -95,6 +97,7 @@ export function PlantDetail({ plantId }: { plantId: string }) {
 }
 
 function PlantHero({ plant }: { plant: Plant }) {
+  const display = getPlantDisplayName(plant)
   const latest = getLatestTimelineEntry(plant)
   const tier = getPlantRankTier(plant.rank_score)
   const leafCount = plant.timeline_entries.length
@@ -146,10 +149,10 @@ function PlantHero({ plant }: { plant: Plant }) {
             <span className="pill bg-primary-fixed text-xs text-primary">{formatVndAmount(plant.market_value)}</span>
           ) : null}
         </div>
-        <h1 className="font-serif text-3xl leading-tight font-semibold text-balance sm:text-5xl">{plant.name}</h1>
-        {plant.scientific_name ? (
-          <p className="mt-1 font-serif text-base text-white/80 italic">{plant.scientific_name}</p>
-        ) : null}
+        <h1 className="font-serif text-3xl leading-tight font-semibold text-balance sm:text-5xl">
+          <PlantTitle display={display} />
+        </h1>
+        {display.vernacular ? <p className="mt-1 text-base text-white/80">{display.vernacular}</p> : null}
       </div>
     </section>
   )

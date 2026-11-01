@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { SparkleIcon, StarIcon } from '@/components/icons'
 import { PlantPhoto } from '@/components/plant-photo'
 import { TOP_TRENDING_MIN_SCORE, getLatestTimelineEntry, type Plant } from '@/lib/garden'
+import { PlantTitle } from '@/components/scientific-name'
+import { getPlantDisplayName } from '@/lib/plant-names'
 
 /** Nổi bật — mẫu cây 10 điểm có ảnh lá mới nhất (giống carousel trong app). */
 export function TopTrending({ plants }: { plants: Plant[] }) {
@@ -22,6 +24,7 @@ export function TopTrending({ plants }: { plants: Plant[] }) {
       <div className="scrollbar-none -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pt-1 pb-4">
         {slides.map((plant, index) => {
           const latest = getLatestTimelineEntry(plant)
+          const display = getPlantDisplayName(plant)
           return (
             <Link
               key={plant.id}
@@ -40,9 +43,11 @@ export function TopTrending({ plants }: { plants: Plant[] }) {
                 <StarIcon className="h-3 w-3" /> 10
               </span>
               <div className="absolute inset-x-0 bottom-0 p-4 text-white">
-                <p className="truncate font-serif text-xl font-semibold">{plant.name}</p>
-                {plant.scientific_name ? (
-                  <p className="truncate font-serif text-sm text-white/75 italic">{plant.scientific_name}</p>
+                <p className="truncate font-serif text-xl font-semibold">
+                  <PlantTitle display={display} />
+                </p>
+                {display.vernacular ? (
+                  <p className="truncate text-sm text-white/75">{display.vernacular}</p>
                 ) : (
                   <p className="text-sm text-white/75">{plant.timeline_entries.length} lá</p>
                 )}

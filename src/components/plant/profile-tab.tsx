@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
 import { CheckIcon, SparkleIcon, TrashIcon } from '@/components/icons'
+import { PlantNameFields, toPlantNameValues } from '@/components/plant/plant-name-fields'
 import { RankSlider } from '@/components/rank-slider'
 import {
   VND_INPUT_PLACEHOLDER,
@@ -12,6 +13,7 @@ import {
   type Plant,
 } from '@/lib/garden'
 import { useDeletePlant, usePlants, useUpdatePlant } from '@/lib/queries'
+import { getPlantDisplayName } from '@/lib/plant-names'
 
 const toPriceInput = (amount: number | null) => (amount == null ? '' : formatVndNumber(amount))
 
@@ -21,9 +23,7 @@ export function ProfileTab({ plant }: { plant: Plant }) {
   const updatePlant = useUpdatePlant()
   const deletePlant = useDeletePlant()
 
-  const [name, setName] = useState(plant.name)
-  const [scientificName, setScientificName] = useState(plant.scientific_name ?? '')
-  const [cultivar, setCultivar] = useState(plant.cultivar ?? '')
+  const [names, setNames] = useState(() => toPlantNameValues(plant))
   const [rankScore, setRankScore] = useState(plant.rank_score)
   const [purchasePrice, setPurchasePrice] = useState(toPriceInput(plant.purchase_price))
   const [purchasedAt, setPurchasedAt] = useState(plant.purchased_at ?? '')
@@ -32,19 +32,14 @@ export function ProfileTab({ plant }: { plant: Plant }) {
   const [savedAt, setSavedAt] = useState<number | null>(null)
 
   const parentOptions = (plants ?? []).filter((candidate) => candidate.id !== plant.id)
-  // Gợi ý các dòng đã nhập để gõ thống nhất
-  const cultivarOptions = [
-    ...new Set((plants ?? []).map((candidate) => candidate.cultivar?.trim()).filter((value): value is string => Boolean(value))),
-  ]
-
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     updatePlant.mutate(
       {
         id: plant.id,
-        name: name.trim(),
-        scientific_name: scientificName.trim() || null,
-        cultivar: cultivar.trim() || null,
+        name: names.name.trim(),
+        scientific_name: names.scientific.trim() || null,
+        cultivar: names.cultivar.trim() || null,
         rank_score: rankScore,
         purchase_price: parseVndAmount(purchasePrice),
         purchased_at: purchasedAt || null,
@@ -68,40 +63,10 @@ export function ProfileTab({ plant }: { plant: Plant }) {
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       <form onSubmit={handleSubmit} className="card space-y-5 p-5 sm:p-6">
         <h2 className="font-serif text-2xl font-semibold text-on-surface">Hồ sơ mẫu cây</h2>
-        <label className="block">
-          <span className="field-label">Tên cây</span>
-          <input required value={name} onChange={(event) => setName(event.target.value)} className="field-input" />
-        </label>
-
-        <label className="block">
-          <span className="field-label">Tên khoa học</span>
-          <input
-            value={scientificName}
-            onChange={(event) => setScientificName(event.target.value)}
-            className="field-input font-serif italic"
-            placeholder="Monstera deliciosa 'Thai Constellation'"
-          />
-          <span className="mt-1 block text-xs text-outline">Danh pháp chuẩn (chi, loài, cultivar) — dùng để tra cứu bằng Gemini AI (giai đoạn 3).</span>
-        </label>
-
-        <label className="block">
-          <span className="field-label">Dòng / cultivar</span>
-          <input
-            value={cultivar}
-            onChange={(event) => setCultivar(event.target.value)}
-            className="field-input"
-            placeholder="Thai Constellation, Albo, Mint…"
-            list="cultivar-options"
-          />
-          <datalist id="cultivar-options">
-            {cultivarOptions.map((option) => (
-              <option key={option} value={option} />
-            ))}
-          </datalist>
-          <span className="mt-1 block text-xs text-outline">
-            Các mẫu cây cùng dòng được gom chung trong Bộ sưu tập lá.
-          </span>
-        </label>
+        <PlantNameFields values={names} onChange={setNames} />
+        <p className="-mt-2 text-xs text-outline">
+          Gõ tên Việt để chọn danh pháp đúng. Các cây cùng danh pháp & dòng được gom chung trong Bộ sưu tập lá.
+        </p>
 
         <div className="rounded-2xl bg-surface-container-low p-4">
           <RankSlider value={rankScore} onChange={setRankScore} />
@@ -147,7 +112,7 @@ export function ProfileTab({ plant }: { plant: Plant }) {
               <option value="">— Không có —</option>
               {parentOptions.map((option) => (
                 <option key={option.id} value={option.id}>
-                  {option.name}
+                  {getPlantDisplayName(option).title}
                 </option>
               ))}
             </select>
@@ -161,7 +126,7 @@ export function ProfileTab({ plant }: { plant: Plant }) {
         ) : null}
 
         <div className="flex flex-wrap items-center gap-3 border-t border-surface-container-high pt-5">
-          <button type="submit" disabled={updatePlant.isPending || !name.trim()} className="btn-primary">
+          <button type="submit" disabled={updatePlant.isPending || !names.name.trim()} className="btn-primary">
             {updatePlant.isPending ? 'Đang lưu…' : 'Lưu hồ sơ'}
           </button>
           {savedAt && !updatePlant.isPending ? (

@@ -29,6 +29,8 @@ export function Modal({
     }
     if (open && !dialog.open) {
       dialog.showModal()
+      // showModal tự focus phần tử đầu tiên (nút Đóng) → chuyển về ô nhập được đánh dấu
+      dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus()
     } else if (!open && dialog.open) {
       dialog.close()
     }
