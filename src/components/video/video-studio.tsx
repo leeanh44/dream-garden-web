@@ -22,6 +22,7 @@ import { exportVideo, isVideoExportSupported, type ExportResult } from '@/lib/vi
 import { PhotoStore } from '@/lib/video/image-store'
 import { buildSlides, buildTimeline, type Scene } from '@/lib/video/scene'
 import { DEFAULT_VIDEO_SETTINGS, getCanvasSize, type VideoSettings } from '@/lib/video/settings'
+import { getPlantDisplayName } from '@/lib/plant-names'
 
 const subscribeNoop = () => () => {}
 
@@ -96,13 +97,14 @@ function Studio({ plant }: { plant: Plant }) {
     () =>
       assets && selectedEntries.length > 0
         ? {
-            plantName: plant.name,
-            scientificName: plant.scientific_name,
+            // Ưu tiên danh pháp làm tiêu đề, tên Việt làm dòng phụ
+            plantName: getPlantDisplayName(plant).title,
+            subtitle: getPlantDisplayName(plant).vernacular,
             slides: buildSlides(selectedEntries),
             ...assets,
           }
         : null,
-    [assets, plant.name, plant.scientific_name, selectedEntries],
+    [assets, plant, selectedEntries],
   )
   const timeline = useMemo(
     () => buildTimeline(scene?.slides.length ?? 0, settings),

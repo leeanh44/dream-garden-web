@@ -1,3 +1,4 @@
+import { getPlantDisplayName, normalizeName } from '@/lib/plant-names'
 // Types + helpers port từ app iOS (garden-app/src/App.tsx) — giữ nguyên quy tắc rank, VNĐ, thuật ngữ.
 
 export const APP_NAME = "Dream's Garden"
@@ -82,9 +83,18 @@ export type LeafCutout = {
 }
 
 /** Khoá gom "dòng": cultivar → tên khoa học → tên cây. */
+/**
+ * Dòng cây để gom Bộ sưu tập lá: theo danh pháp + dòng (vd. Monstera deliciosa 'Albo'),
+ * không có danh pháp thì theo dòng / tên Việt.
+ */
 export const getPlantLine = (plant: Pick<Plant, 'cultivar' | 'scientific_name' | 'name'>) => {
-  const title = plant.cultivar?.trim() || plant.scientific_name?.trim() || plant.name.trim()
-  return { key: title.toLocaleLowerCase('vi'), title }
+  const display = getPlantDisplayName(plant)
+  const title = display.latin ? display.title : plant.cultivar?.trim() || display.title
+  return {
+    key: normalizeName(title),
+    title,
+    display: display.latin ? display : { ...display, title, latin: null, cultivar: null },
+  }
 }
 
 export const formatVarRatio = (ratio: number | null) => (ratio == null ? '—' : `${Math.round(ratio * 100)}%`)

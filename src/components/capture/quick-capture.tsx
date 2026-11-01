@@ -7,6 +7,8 @@ import { ArrowLeftIcon, CameraIcon, CloseIcon, ImageIcon, SearchIcon } from '@/c
 import { PlantPhoto } from '@/components/plant-photo'
 import { getDaysSinceDate, getLatestTimelineEntry, getPlantLastPhotoAt, type Plant } from '@/lib/garden'
 import { useAddTimelinePhotos, usePlants, type UploadProgress } from '@/lib/queries'
+import { PlantTitle } from '@/components/scientific-name'
+import { getPlantDisplayName } from '@/lib/plant-names'
 
 /** `image/*` → điện thoại mở thẳng thư viện ảnh / camera thay vì trình chọn tệp */
 const ACCEPTED_TYPES = 'image/*'
@@ -196,7 +198,7 @@ export function QuickCapture() {
                         />
                         <span className="min-w-0 flex-1">
                           <span className="block truncate font-serif text-base font-semibold text-on-surface">
-                            {plant.name}
+                            <PlantTitle display={getPlantDisplayName(plant)} />
                           </span>
                           <span className={`block text-xs ${days >= 14 ? 'text-error' : 'text-on-surface-variant'}`}>
                             {latest ? `Ghi nhận gần nhất: ${days <= 0 ? 'hôm nay' : `${days} ngày trước`}` : 'Chưa ghi nhận'}

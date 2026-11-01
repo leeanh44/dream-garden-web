@@ -16,7 +16,7 @@ export type SceneSlide = {
 
 export type Scene = {
   plantName: string
-  scientificName: string | null
+  subtitle: string | null
   /** Cũ → mới */
   slides: SceneSlide[]
   fonts: { serif: string; sans: string }
@@ -347,10 +347,10 @@ const drawTitleCard = (draw: DrawContext, kind: 'intro' | 'outro', progress: num
       y += 96 * u
     }
 
-    if (scene.scientificName) {
-      ctx.font = `italic 400 ${34 * u}px ${scene.fonts.serif}`
+    if (scene.subtitle) {
+      ctx.font = `400 ${34 * u}px ${scene.fonts.serif}`
       ctx.globalAlpha *= 0.85
-      const [scientific] = wrapText(ctx, scene.scientificName, width - 120 * u, 1)
+      const [scientific] = wrapText(ctx, scene.subtitle, width - 120 * u, 1)
       ctx.fillText(scientific, centerX, y - 30 * u)
       ctx.globalAlpha /= 0.85
       y += 30 * u

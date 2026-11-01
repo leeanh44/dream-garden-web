@@ -10,6 +10,8 @@ import {
   getPlantRankTier,
   type Plant,
 } from '@/lib/garden'
+import { PlantTitle } from '@/components/scientific-name'
+import { getPlantDisplayName } from '@/lib/plant-names'
 
 /** Số card hiện ngay màn hình đầu (2 hàng × 4 cột) — tải ảnh ưu tiên cao. */
 const ABOVE_THE_FOLD = 8
@@ -25,6 +27,7 @@ export function PlantListItem({
 }) {
   const latestPhoto = getLatestTimelineEntry(plant)
   const daysSincePhoto = getDaysSinceDate(getPlantLastPhotoAt(plant))
+  const display = getPlantDisplayName(plant)
   const leafCount = plant.timeline_entries.length
   const isSold = variant === 'sold'
   const showPhotoAge = !isSold && leafCount > 0 && daysSincePhoto > 0
@@ -71,11 +74,9 @@ export function PlantListItem({
 
       <div className="flex min-w-0 flex-1 flex-col gap-0.5 p-3 sm:p-4">
         <span className="truncate font-serif text-base leading-snug font-semibold text-on-surface sm:text-lg">
-          {plant.name}
+          <PlantTitle display={display} />
         </span>
-        {plant.scientific_name ? (
-          <span className="truncate font-serif text-xs text-outline italic">{plant.scientific_name}</span>
-        ) : null}
+        {display.vernacular ? <span className="truncate text-xs text-outline">{display.vernacular}</span> : null}
         <div className="mt-auto flex items-center justify-between gap-2 pt-2 text-xs">
           <span className="text-on-surface-variant">{leafCount > 0 ? `${leafCount} lá` : 'Chưa ghi nhận'}</span>
           {!isSold && plant.market_value != null ? (
