@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { memo, useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
-import { CameraIcon, LeafPlusIcon, CloseIcon, CollectionIcon, FilmIcon, ImageIcon, PencilIcon, ScissorsIcon, TrashIcon } from '@/components/icons'
+import { CameraIcon, CloseIcon, CollectionIcon, FilmIcon, ImageIcon, PencilIcon, ScissorsIcon, TrashIcon } from '@/components/icons'
 import { LeafCutoutDialog } from '@/components/leaf/leaf-cutout-dialog'
 import { PlantPhoto } from '@/components/plant-photo'
 import { formatDate, getDaysSinceDate, toDateInputValue, type Plant, type TimelineEntry } from '@/lib/garden'
@@ -102,9 +102,10 @@ export function TimelineTab({ plant }: { plant: Plant }) {
       <input ref={libraryRef} type="file" accept={ACCEPTED_TYPES} multiple hidden onChange={handleFiles} />
       <input ref={cameraRef} type="file" accept={ACCEPTED_TYPES} capture="environment" hidden onChange={handleFiles} />
 
-      <div className="mb-6 flex flex-wrap items-center gap-3">
+      {/* Mobile: 3 nút chia đều 1 hàng; desktop: nút gọn theo nội dung */}
+      <div className="mb-6 flex items-center gap-2 sm:gap-3 [&>*]:flex-1 [&>*]:px-3 sm:[&>*]:flex-none sm:[&>*]:px-6">
         {progress ? (
-          <span className="btn-primary pointer-events-none opacity-80">
+          <span className="btn-primary pointer-events-none !flex-[2] opacity-80">
             Đang tải {progress.done}/{progress.total}…
           </span>
         ) : (
@@ -116,7 +117,7 @@ export function TimelineTab({ plant }: { plant: Plant }) {
               disabled={addPhotos.isPending}
               className="btn-primary hidden pointer-coarse:inline-flex"
             >
-              <CameraIcon className="text-lg" /> Chụp lá mới
+              <CameraIcon className="text-lg" /> Chụp lá
             </button>
             <button
               type="button"
@@ -124,7 +125,7 @@ export function TimelineTab({ plant }: { plant: Plant }) {
               disabled={addPhotos.isPending}
               className="btn-secondary"
             >
-              <LeafPlusIcon className="-my-1 h-7 w-7" /> Thêm ảnh lá
+              <ImageIcon className="text-lg" /> Albums
             </button>
           </>
         )}
@@ -133,12 +134,14 @@ export function TimelineTab({ plant }: { plant: Plant }) {
             <FilmIcon className="text-lg" /> Tạo video
           </Link>
         ) : (
-          <span className="btn-secondary cursor-not-allowed opacity-50" title="Cần ít nhất 2 ảnh lá">
+          <span
+            className="btn-secondary cursor-not-allowed opacity-50"
+            title="Cần ít nhất 2 ảnh lá"
+            aria-disabled="true"
+          >
             <FilmIcon className="text-lg" /> Tạo video
-            <span className="text-xs font-normal">(cần ≥2 ảnh)</span>
           </span>
         )}
-        <span className="hidden text-xs text-outline lg:inline">Mẹo: kéo thả ảnh vào đây để tải lên</span>
       </div>
 
       {progress ? (
