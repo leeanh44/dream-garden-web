@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useDeferredValue, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
-import { ArrowLeftIcon, CameraIcon, CloseIcon, ImageIcon, SearchIcon } from '@/components/icons'
+import { AddPlantDialog } from '@/components/garden/add-plant-dialog'
+import { ArrowLeftIcon, CameraIcon, CloseIcon, ImageIcon, LeafPlusIcon, SearchIcon } from '@/components/icons'
 import { PlantPhoto } from '@/components/plant-photo'
 import { getDaysSinceDate, getLatestTimelineEntry, getPlantLastPhotoAt, type Plant } from '@/lib/garden'
 import { useAddTimelinePhotos, usePlants, type UploadProgress } from '@/lib/queries'
@@ -25,6 +26,7 @@ export function QuickCapture() {
   const deferredSearch = useDeferredValue(search)
   const [progress, setProgress] = useState<UploadProgress | null>(null)
   const [savingPlantId, setSavingPlantId] = useState<string | null>(null)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
 
   const previews = useMemo(() => files.map((file) => URL.createObjectURL(file)), [files])
   useEffect(() => () => previews.forEach((url) => URL.revokeObjectURL(url)), [previews])
@@ -51,14 +53,14 @@ export function QuickCapture() {
     }
   }
 
-  const save = (plant: Plant) => {
-    setSavingPlantId(plant.id)
+  const save = (plantId: Plant['id']) => {
+    setSavingPlantId(plantId)
     addPhotos.mutate(
-      { files, plantId: plant.id, onProgress: setProgress },
+      { files, plantId, onProgress: setProgress },
       {
         onSuccess: ({ errors }) => {
           if (errors.length === 0) {
-            router.push(`/plants/${plant.id}`)
+            router.push(`/plants/${plantId}`)
           }
         },
         onSettled: () => {
@@ -154,7 +156,17 @@ export function QuickCapture() {
           ) : null}
 
           <section>
-            <h2 className="mb-3 font-serif text-xl font-semibold text-on-surface">Lưu vào mẫu cây</h2>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="font-serif text-xl font-semibold text-on-surface">Lưu vào mẫu cây</h2>
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={() => setIsCreateOpen(true)}
+                className="btn-ghost -mr-2"
+              >
+                <LeafPlusIcon className="-my-2 h-8 w-8" /> Cây mới
+              </button>
+            </div>
             <label className="relative mb-4 block">
               <span className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-lg text-outline">
                 <SearchIcon />
@@ -176,7 +188,20 @@ export function QuickCapture() {
                 ))}
               </div>
             ) : candidates.length === 0 ? (
-              <p className="py-8 text-center text-sm text-on-surface-variant">Không có mẫu cây nào khớp.</p>
+              <div className="flex flex-col items-center gap-3 py-8 text-center">
+                <p className="text-sm text-on-surface-variant">
+                  {search.trim() ? 'Không có mẫu cây nào khớp.' : 'Chưa có mẫu cây nào.'}
+                </p>
+                <button
+                  type="button"
+                  disabled={isSaving}
+                  onClick={() => setIsCreateOpen(true)}
+                  className="btn-primary"
+                >
+                  <LeafPlusIcon className="-my-2 h-9 w-9" />
+                  {search.trim() ? `Tạo cây “${search.trim()}”` : 'Tạo cây mới'}
+                </button>
+              </div>
             ) : (
               <ul className="space-y-2">
                 {candidates.map((plant) => {
@@ -188,7 +213,7 @@ export function QuickCapture() {
                       <button
                         type="button"
                         disabled={isSaving}
-                        onClick={() => save(plant)}
+                        onClick={() => save(plant.id)}
                         className="card flex w-full items-center gap-3 p-2.5 pr-4 text-left transition-transform active:scale-[0.98] disabled:opacity-60"
                       >
                         <PlantPhoto
@@ -214,6 +239,15 @@ export function QuickCapture() {
               </ul>
             )}
           </section>
+
+          <AddPlantDialog
+            open={isCreateOpen}
+            onClose={() => setIsCreateOpen(false)}
+            initialName={search.trim()}
+            description={`Tạo mẫu cây mới rồi lưu ${files.length} ảnh vừa chọn vào Nhật ký của cây.`}
+            submitLabel="Tạo & lưu ảnh"
+            onCreated={save}
+          />
         </>
       )}
     </div>

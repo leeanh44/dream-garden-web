@@ -13,18 +13,34 @@ import {
 } from '@/lib/garden'
 import { useCreatePlant } from '@/lib/queries'
 
-export function AddPlantDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+type AddPlantProps = {
+  onClose: () => void
+  /** Tên gõ sẵn (vd. từ ô tìm kiếm ở Chụp nhanh) */
+  initialName?: string
+  /** Mặc định: mở trang cây vừa tạo. Truyền vào để tự xử lý (vd. lưu ảnh vào cây mới). */
+  onCreated?: (plantId: string) => void
+  description?: string
+  submitLabel?: string
+}
+
+export function AddPlantDialog({ open, ...props }: AddPlantProps & { open: boolean }) {
   return (
-    <Modal open={open} onClose={onClose} title="Thêm cây" plainIcon icon={<LeafArtIcon className="-my-2 h-14 w-14" />}>
-      <AddPlantForm onClose={onClose} />
+    <Modal open={open} onClose={props.onClose} title="Thêm cây" plainIcon icon={<LeafArtIcon className="-my-2 h-14 w-14" />}>
+      <AddPlantForm {...props} />
     </Modal>
   )
 }
 
-function AddPlantForm({ onClose }: { onClose: () => void }) {
+function AddPlantForm({
+  onClose,
+  initialName = '',
+  onCreated,
+  description = 'Sau khi nhập kho, có thể ghi nhận ảnh lá vào Nhật ký ngay.',
+  submitLabel = 'Nhập kho',
+}: AddPlantProps) {
   const router = useRouter()
   const createPlant = useCreatePlant()
-  const [names, setNames] = useState<PlantNameValues>({ name: '', scientific: '', cultivar: '' })
+  const [names, setNames] = useState<PlantNameValues>({ name: initialName, scientific: '', cultivar: '' })
   const [price, setPrice] = useState('')
   const [purchasedAt, setPurchasedAt] = useState(() => toDateInputValue(new Date()))
 
@@ -41,7 +57,11 @@ function AddPlantForm({ onClose }: { onClose: () => void }) {
       {
         onSuccess: ({ id }) => {
           onClose()
-          router.push(`/plants/${id}`)
+          if (onCreated) {
+            onCreated(id)
+          } else {
+            router.push(`/plants/${id}`)
+          }
         },
       },
     )
@@ -49,7 +69,7 @@ function AddPlantForm({ onClose }: { onClose: () => void }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <p className="-mt-2 text-sm text-on-surface-variant">Sau khi nhập kho, có thể ghi nhận ảnh lá vào Nhật ký ngay.</p>
+      <p className="-mt-2 text-sm text-on-surface-variant">{description}</p>
       <PlantNameFields values={names} onChange={setNames} autoFocus />
 
       <div className="grid gap-3 min-[380px]:grid-cols-2">
@@ -85,7 +105,7 @@ function AddPlantForm({ onClose }: { onClose: () => void }) {
           'Đang lưu…'
         ) : (
           <>
-            <LeafPlusIcon className="h-8 w-8" /> Nhập kho
+            <LeafPlusIcon className="h-8 w-8" /> {submitLabel}
           </>
         )}
       </button>
