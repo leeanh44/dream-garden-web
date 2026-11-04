@@ -43,8 +43,8 @@ export function PlantPhoto({
   const url = full.data
   const isLoaded = url != null && loadedSrc === url
   const hasFailed = !path || full.isError || (url != null && failedSrc === url && retried)
-  // Thumbnail đang đóng vai ảnh chính (chờ ảnh full) → hiện nét thay vì làm mờ
-  const sharpPlaceholder = deferFull && !url
+  // Thumbnail đóng vai ảnh chính cho tới khi ảnh full tải xong → hiện nét, không làm mờ (tránh chớp)
+  const sharpPlaceholder = deferFull
 
   // HTML từ server chưa biết signed URL đã cache trong localStorage → frame hydrate luôn hiện skeleton
   // để khớp với server, ngay sau đó mới gắn ảnh.
