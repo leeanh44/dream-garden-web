@@ -39,8 +39,9 @@ const sortPlants = (plants: Plant[], mode: PlantSortMode) =>
       : new Date(right.created_at).getTime() - new Date(left.created_at).getTime(),
   )
 
-export function GardenView() {
-  const { data: plants, isPending, error, refetch } = usePlants()
+/** `awaitServerData`: dữ liệu đang được server gửi kèm → không tự gọi Supabase (vẫn hiện dữ liệu đã cache). */
+export function GardenView({ awaitServerData = false }: { awaitServerData?: boolean }) {
+  const { data: plants, isPending, error, refetch } = usePlants({ enabled: !awaitServerData })
   const [search, setSearch] = useState('')
   const deferredSearch = useDeferredValue(search)
   const [rankFilter, setRankFilter] = useLocalStorageState<PlantRankFilter>(

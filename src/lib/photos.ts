@@ -8,7 +8,7 @@ const THUMB_MAX_SIZE = 480
  * Signed URL sống 7 ngày và được lưu lại (localStorage) → mở lại trang vẫn dùng đúng URL cũ,
  * trình duyệt lấy ảnh thẳng từ HTTP cache thay vì tải lại. Làm mới khi còn < 1 ngày.
  */
-const SIGNED_URL_TTL_SECONDS = 7 * 24 * 60 * 60
+export const SIGNED_URL_TTL_SECONDS = 7 * 24 * 60 * 60
 const SIGNED_URL_MIN_REMAINING_MS = 24 * 60 * 60 * 1000
 /** Thời gian TanStack Query coi URL là mới — URL luôn còn hạn ≥ 1 ngày khi được trả về. */
 export const SIGNED_URL_STALE_MS = 60 * 60 * 1000
@@ -155,6 +155,29 @@ export const getCachedSignedUrl = (path: string | null | undefined): string | un
     return entry[0]
   }
   return undefined
+}
+
+/**
+ * Nhận signed URL server đã ký sẵn (gửi kèm HTML trang chủ) → ảnh hiện ngay khi hydrate, không phải xin URL.
+ * URL đã có trong cache bền được giữ nguyên để trình duyệt tiếp tục dùng ảnh trong HTTP cache.
+ */
+export const seedSignedUrls = (urls: Record<string, string>, signedAt: number) => {
+  if (typeof window === 'undefined') {
+    return
+  }
+  const cache = getUrlCache()
+  const expiresAt = signedAt + SIGNED_URL_TTL_SECONDS * 1000
+  let changed = false
+  for (const [path, url] of Object.entries(urls)) {
+    if (!getCachedSignedUrl(path)) {
+      cache.delete(path)
+      cache.set(path, [url, expiresAt])
+      changed = true
+    }
+  }
+  if (changed) {
+    persistUrlCache()
+  }
 }
 
 export const forgetSignedUrls = (paths: string[]) => {
