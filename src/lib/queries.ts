@@ -2,7 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
-import { sortTimelineEntries, type Plant, type TimelineEntry } from '@/lib/garden'
+import type { Plant, TimelineEntry } from '@/lib/garden'
+import { PLANTS_QUERY_KEY, getPlantCoverPath, selectPlants } from '@/lib/plants-data'
 import {
   PHOTOS_BUCKET,
   PHOTO_CACHE_CONTROL,
@@ -13,8 +14,6 @@ import {
   preparePhoto,
   primeSignedUrls,
 } from '@/lib/photos'
-
-const PLANTS_QUERY_KEY = ['plants'] as const
 
 const supabase = () => getSupabaseBrowserClient()
 
@@ -40,27 +39,18 @@ const getCurrentUserId = async () => {
 // ---------------------------------------------------------------------------
 
 const fetchPlants = async (): Promise<Plant[]> => {
-  const rows = throwIfError(
-    await supabase()
-      .from('plants')
-      .select('*, timeline_entries(*)')
-      .order('created_at', { ascending: false }),
-  ) as Plant[]
-
-  const plants = rows.map((plant) => ({
-    ...plant,
-    timeline_entries: sortTimelineEntries(plant.timeline_entries ?? []),
-  }))
-
+  const plants = await selectPlants(supabase())
   // Xin signed URL cho thumbnail mọi cây trong 1 request, song song với lúc React render danh sách
-  primeSignedUrls(
-    plants.map((plant) => plant.timeline_entries[0]?.thumb_path ?? plant.timeline_entries[0]?.photo_path),
-  )
+  primeSignedUrls(plants.map(getPlantCoverPath))
   return plants
 }
 
-/** Toàn bộ kho cây (kèm nhật ký lá) — vườn cá nhân nên tải 1 lần là đủ. */
-export const usePlants = () => useQuery({ queryKey: PLANTS_QUERY_KEY, queryFn: fetchPlants })
+/**
+ * Toàn bộ kho cây (kèm nhật ký lá) — vườn cá nhân nên tải 1 lần là đủ.
+ * `enabled: false` khi trang đang chờ dữ liệu server gửi kèm HTML (vẫn trả về dữ liệu đã cache).
+ */
+export const usePlants = ({ enabled = true }: { enabled?: boolean } = {}) =>
+  useQuery({ queryKey: PLANTS_QUERY_KEY, queryFn: fetchPlants, enabled })
 
 export const usePlant = (plantId: string) => {
   const query = usePlants()
