@@ -202,7 +202,7 @@ const flushSignedUrlRequests = async () => {
 
   const paths = [...batch.keys()]
   const requestedAt = Date.now()
-  const { data, error } = await getSupabaseBrowserClient()
+  const { data, error } = await (await getSupabaseBrowserClient())
     .storage.from(PHOTOS_BUCKET)
     .createSignedUrls(paths, SIGNED_URL_TTL_SECONDS)
 

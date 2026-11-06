@@ -35,7 +35,7 @@ export function LoginForm({ next, initialError }: { next?: string; initialError:
     setError(null)
     setInfo(null)
 
-    const supabase = getSupabaseBrowserClient()
+    const supabase = await getSupabaseBrowserClient()
 
     if (mode === 'signin') {
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
