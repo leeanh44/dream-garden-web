@@ -59,7 +59,7 @@ export function PlantPhoto({
   if (hasFailed) {
     return (
       <div
-        className={`flex items-center justify-center bg-gradient-to-br from-secondary-container/60 to-surface-container-low text-primary/30 ${className}`}
+        className={`flex items-center justify-center bg-surface-container text-primary/30 ${className}`}
         role="img"
         aria-label={alt}
       >

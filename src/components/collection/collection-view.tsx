@@ -69,7 +69,7 @@ export function CollectionView() {
 
   return (
     <div className="animate-fade-in">
-      <section className="relative mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#f3fbf6] via-surface-container-lowest to-secondary-container/60 p-6 shadow-leaf ring-1 ring-surface-container-high/60 md:p-8">
+      <section className="relative mb-8 overflow-hidden rounded-[2rem] bg-surface-container-lowest p-6 shadow-leaf ring-1 ring-surface-container-high md:p-8">
         <CollectionIcon className="pointer-events-none absolute -top-6 -right-4 h-44 w-44 rotate-12 text-primary/5" />
         <p className="eyebrow">Tuyển tập</p>
         <h1 className="font-serif text-3xl font-semibold text-on-surface md:text-4xl">Bộ sưu tập</h1>
@@ -202,7 +202,7 @@ function PhotoDetail({ item, onClose }: { item: Item | null; onClose: () => void
             <button
               type="button"
               onClick={onClose}
-              className="btn-icon absolute top-3 right-3 bg-white/80 backdrop-blur sm:hidden"
+              className="btn-icon absolute top-3 right-3 bg-black/45 text-white backdrop-blur hover:bg-black/60 hover:text-white sm:hidden"
               aria-label="Đóng"
             >
               <CloseIcon />

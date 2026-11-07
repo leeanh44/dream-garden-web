@@ -93,13 +93,13 @@ export function QuickCapture() {
           <button
             type="button"
             onClick={() => cameraRef.current?.click()}
-            className="relative flex w-full flex-col items-center gap-4 overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary-container via-primary to-[#002f1e] px-6 py-14 text-on-primary shadow-leaf-lg transition-transform active:scale-[0.98]"
+            className="relative flex w-full flex-col items-center gap-4 overflow-hidden rounded-[2rem] bg-[#13241b] px-6 py-14 text-[#f2ecdd] shadow-leaf-lg ring-1 ring-white/10 transition-transform active:scale-[0.98]"
           >
-            <span className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-fixed text-4xl text-primary shadow-fab">
+            <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#cde59a] text-4xl text-[#0e1c15] shadow-[0_8px_22px_rgba(205,229,154,0.28)]">
               <CameraIcon />
             </span>
             <span className="font-serif text-2xl font-semibold">Mở camera</span>
-            <span className="text-sm text-on-primary/70">Chụp lá mới ra hoặc cập nhật sinh trưởng</span>
+            <span className="text-sm text-[#a7b6a9]">Chụp lá mới ra hoặc cập nhật sinh trưởng</span>
           </button>
           <button type="button" onClick={() => libraryRef.current?.click()} className="btn-secondary w-full">
             <ImageIcon /> Chọn từ thư viện ảnh
@@ -141,7 +141,7 @@ export function QuickCapture() {
           {progress ? (
             <div className="mb-5 h-2 overflow-hidden rounded-full bg-surface-container" aria-hidden="true">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-primary-container to-success-green transition-[width] duration-300"
+                className="h-full rounded-full bg-primary transition-[width] duration-300"
                 style={{ width: `${Math.max(6, (progress.done / progress.total) * 100)}%` }}
               />
             </div>

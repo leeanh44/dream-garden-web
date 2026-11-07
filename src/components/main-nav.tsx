@@ -44,7 +44,7 @@ function NavList({ variant, pathname }: MainNavProps & { pathname: string | null
     <nav
       className={
         compact
-          ? 'fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+12px)] z-30 mx-auto flex max-w-md gap-1 rounded-full border border-white/60 bg-surface-container-lowest/85 p-1.5 shadow-leaf-lg backdrop-blur-xl backdrop-saturate-150 md:hidden'
+          ? 'fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+12px)] z-30 mx-auto flex max-w-md gap-1 rounded-full border border-outline-variant bg-surface-container-lowest/90 p-1.5 shadow-leaf-lg backdrop-blur-xl backdrop-saturate-150 md:hidden'
           : 'hidden min-w-0 items-center gap-0.5 md:flex lg:gap-1'
       }
       aria-label="Điều hướng chính"
@@ -60,7 +60,7 @@ function NavLink({ item, active, compact }: { item: NavItem; active: boolean; co
   const Icon = item.icon
   const className = compact
     ? `flex h-14 flex-1 flex-col items-center justify-center gap-1 rounded-full text-[11px] leading-none font-semibold transition-colors ${
-        active ? 'bg-secondary-container text-primary' : 'text-on-surface-variant'
+        active ? 'bg-primary text-on-primary' : 'text-on-surface-variant'
       }`
     : `flex h-10 items-center gap-2 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition-colors lg:px-4 ${
         active ? 'bg-secondary-container text-primary' : 'text-on-surface-variant hover:bg-surface-container'

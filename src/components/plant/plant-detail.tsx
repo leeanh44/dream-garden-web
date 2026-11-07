@@ -105,7 +105,7 @@ function PlantHero({ plant }: { plant: Plant }) {
   const trackedDays = first ? getDaysSinceDate(new Date(first.taken_at)) + 1 : 0
 
   return (
-    <section className="relative mb-4 overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary-container to-[#002f1e] shadow-leaf-lg">
+    <section className="relative mb-4 overflow-hidden rounded-[2rem] bg-surface-container shadow-leaf-lg">
       {latest ? (
         <PlantPhoto
           path={latest.photo_path}
@@ -116,7 +116,7 @@ function PlantHero({ plant }: { plant: Plant }) {
         />
       ) : (
         <div className="relative h-56 sm:h-64" aria-hidden="true">
-          <LeafIcon className="absolute top-6 right-6 h-40 w-40 rotate-12 text-primary-fixed/15" />
+          <LeafIcon className="absolute top-6 right-6 h-40 w-40 rotate-12 text-primary/20" />
         </div>
       )}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-black/10" />
@@ -146,7 +146,7 @@ function PlantHero({ plant }: { plant: Plant }) {
             <span className="pill bg-white/20 text-xs font-semibold backdrop-blur">{trackedDays} ngày theo dõi sinh trưởng</span>
           ) : null}
           {plant.market_value != null ? (
-            <span className="pill bg-primary-fixed text-xs text-primary">{formatVndAmount(plant.market_value)}</span>
+            <span className="pill bg-warm text-xs text-surface">{formatVndAmount(plant.market_value)}</span>
           ) : null}
         </div>
         <h1 className="font-serif text-3xl leading-tight font-semibold text-balance sm:text-5xl">

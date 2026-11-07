@@ -10,11 +10,11 @@ export const metadata = { title: `Đăng nhập · ${APP_NAME}` }
 export default function LoginPage({ searchParams }: PageProps<'/login'>) {
   return (
     <main className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-10">
-      <LeafIcon className="pointer-events-none absolute -top-16 -left-20 h-80 w-80 -rotate-[30deg] text-primary-fixed/40" />
-      <LeafIcon className="pointer-events-none absolute -right-24 -bottom-20 h-96 w-96 rotate-[150deg] text-secondary-container/70" />
+      <LeafIcon className="pointer-events-none absolute -top-16 -left-20 h-80 w-80 -rotate-[30deg] text-primary/10" />
+      <LeafIcon className="pointer-events-none absolute -right-24 -bottom-20 h-96 w-96 rotate-[150deg] text-primary/5" />
       <div className="relative w-full max-w-sm animate-fade-up">
         <div className="mb-8 text-center">
-          <AppLogo priority className="mx-auto mb-5 h-24 w-24 animate-sway shadow-[0_16px_30px_-12px_rgba(0,79,51,0.45)]" />
+          <AppLogo priority className="mx-auto mb-5 h-24 w-24 animate-sway shadow-leaf-lg" />
           <h1 className="font-serif text-4xl font-semibold text-primary">{APP_NAME}</h1>
           <p className="mt-2 min-h-5 text-sm text-on-surface-variant">
             <Suspense>

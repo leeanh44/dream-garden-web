@@ -112,9 +112,9 @@ export function GardenView() {
       {stalePlant ? (
         <Link
           href={`/plants/${stalePlant.id}`}
-          className="group mb-8 flex animate-fade-up items-center gap-4 rounded-3xl bg-gradient-to-r from-primary-fixed/50 via-secondary-container/50 to-transparent p-4 ring-1 ring-primary/10 transition-colors hover:from-primary-fixed/70"
+          className="group mb-8 flex animate-fade-up items-center gap-4 rounded-3xl bg-surface-container-lowest p-4 ring-1 ring-surface-container-high transition-colors hover:bg-surface-container-low"
         >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-xl text-on-primary shadow-leaf">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-warm text-xl text-surface">
             <CameraIcon />
           </span>
           <span className="min-w-0 flex-1 text-sm leading-snug text-on-surface-variant">
@@ -230,38 +230,34 @@ function GardenHero({
   onAdd: () => void
 }) {
   const stats = [
-    { label: 'Đang chăm', value: String(plantCount) },
-    { label: 'Lượt ghi nhận', value: String(leafCount) },
-    { label: 'Định giá', value: totalValue > 0 ? formatCompactVnd(totalValue) : '—' },
+    { label: 'Đang chăm', value: String(plantCount), tone: 'text-on-surface' },
+    { label: 'Lượt ghi nhận', value: String(leafCount), tone: 'text-primary' },
+    { label: 'Định giá', value: totalValue > 0 ? formatCompactVnd(totalValue) : '—', tone: 'text-warm' },
   ]
 
   return (
-    <section className="relative mb-8 animate-fade-up overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary-container via-primary to-[#002f1e] p-6 text-on-primary shadow-leaf-lg md:p-8">
-      {/* Lá trang trí */}
-      <LeafIcon className="pointer-events-none absolute -top-8 -right-6 h-48 w-48 rotate-12 text-primary-fixed/10 md:h-64 md:w-64" />
-      <LeafIcon className="pointer-events-none absolute -bottom-10 left-1/2 h-32 w-32 -rotate-45 text-primary-fixed/5" />
-
-      <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+    <section className="mb-10 animate-fade-up">
+      <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-[11px] font-bold tracking-[0.2em] text-primary-fixed/80 uppercase">Dream&apos;s Garden</p>
-          <h1 className="mt-1 font-serif text-3xl leading-tight font-semibold md:text-4xl">Bộ sưu tập kiểng lá</h1>
-          <p className="mt-1 text-sm text-on-primary/70">Theo dõi sinh trưởng, độ ổn định var và giá trị từng mẫu cây.</p>
+          <p className="eyebrow">Bộ sưu tập kiểng lá</p>
+          <h1 className="mt-2 max-w-2xl font-serif text-[2.5rem] leading-[1.05] font-medium tracking-tight text-balance text-on-surface md:text-6xl">
+            Khu vườn đang <em className="text-primary">bung lá mới</em>.
+          </h1>
         </div>
-        <button
-          type="button"
-          onClick={onAdd}
-          className="hidden min-h-12 items-center gap-2 self-start rounded-full bg-primary-fixed px-5 font-semibold text-primary shadow-[0_8px_24px_-8px_rgba(0,0,0,0.45)] transition-transform hover:scale-[1.03] active:scale-[0.97] md:inline-flex md:self-auto"
-        >
+        <button type="button" onClick={onAdd} className="btn-primary hidden self-start md:inline-flex md:self-auto">
           <LeafPlusIcon className="-my-2 h-10 w-10" />
           Thêm cây
         </button>
       </div>
 
-      <dl className="relative mt-6 grid grid-cols-3 gap-2 md:max-w-lg">
+      <dl className="mt-6 grid grid-cols-3 gap-2 md:max-w-xl md:gap-3">
         {stats.map((stat) => (
-          <div key={stat.label} className="rounded-2xl bg-white/10 px-3 py-3 ring-1 ring-white/10 backdrop-blur-sm">
-            <dt className="truncate text-[11px] font-semibold text-on-primary/70">{stat.label}</dt>
-            <dd className="mt-0.5 truncate font-serif text-xl font-semibold md:text-2xl">{stat.value}</dd>
+          <div
+            key={stat.label}
+            className="flex flex-col-reverse rounded-2xl bg-surface-container-lowest px-3 py-3 ring-1 ring-surface-container-high md:px-4"
+          >
+            <dt className="truncate text-xs text-on-surface-variant">{stat.label}</dt>
+            <dd className={`truncate font-serif text-2xl font-semibold md:text-3xl ${stat.tone}`}>{stat.value}</dd>
           </div>
         ))}
       </dl>
@@ -290,7 +286,15 @@ function EmptyGarden({ onAdd }: { onAdd: () => void }) {
 function GardenSkeleton() {
   return (
     <div aria-label="Đang tải" aria-busy="true">
-      <div className="skeleton mb-8 h-56 rounded-[2rem] md:h-52" />
+      <div className="mb-10 space-y-3">
+        <div className="skeleton h-3 w-40 rounded-full" />
+        <div className="skeleton h-20 w-4/5 max-w-xl rounded-2xl" />
+        <div className="grid grid-cols-3 gap-2 pt-3 md:max-w-xl">
+          <div className="skeleton h-[4.5rem] rounded-2xl" />
+          <div className="skeleton h-[4.5rem] rounded-2xl" />
+          <div className="skeleton h-[4.5rem] rounded-2xl" />
+        </div>
+      </div>
       <div className="skeleton mb-4 h-8 w-40 rounded-full" />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
         {Array.from({ length: 8 }, (_, index) => (

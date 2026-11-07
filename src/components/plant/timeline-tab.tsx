@@ -137,7 +137,7 @@ export function TimelineTab({ plant }: { plant: Plant }) {
       {progress ? (
         <div className="mb-6 h-2 overflow-hidden rounded-full bg-surface-container" aria-hidden="true">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-primary-container to-success-green transition-[width] duration-300"
+            className="h-full rounded-full bg-primary transition-[width] duration-300"
             style={{ width: `${Math.max(6, (progress.done / progress.total) * 100)}%` }}
           />
         </div>

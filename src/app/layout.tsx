@@ -1,20 +1,26 @@
 import type { Metadata, Viewport } from 'next'
-import { Lora, Plus_Jakarta_Sans } from 'next/font/google'
+import { Be_Vietnam_Pro, Fraunces } from 'next/font/google'
 import { preconnect } from 'react-dom'
 import { Providers } from '@/components/providers'
 import { APP_NAME } from '@/lib/garden'
 import { SUPABASE_URL } from '@/lib/supabase/env'
+import { THEME_COLORS, THEME_INIT_SCRIPT } from '@/lib/theme'
 import './globals.css'
 
-const lora = Lora({
-  variable: '--font-lora',
+// Tiêu đề, tên cây (nghiêng cho tên khoa học) — variable font, có tiếng Việt
+const fraunces = Fraunces({
+  variable: '--font-fraunces',
   subsets: ['latin', 'vietnamese'],
   style: ['normal', 'italic'],
+  axes: ['opsz'],
 })
 
-const jakarta = Plus_Jakarta_Sans({
-  variable: '--font-jakarta',
+// Nội dung — không preload để khỏi giành băng thông (fallback đã chỉnh cỡ nên không xô lệch)
+const vietnam = Be_Vietnam_Pro({
+  variable: '--font-vietnam',
   subsets: ['latin', 'vietnamese'],
+  weight: ['400', '500', '600', '700'],
+  preload: false,
 })
 
 export const metadata: Metadata = {
@@ -27,7 +33,10 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#f7faf9',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: THEME_COLORS.light },
+    { media: '(prefers-color-scheme: dark)', color: THEME_COLORS.dark },
+  ],
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
@@ -42,7 +51,11 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
     preconnect(SUPABASE_URL)
   }
   return (
-    <html lang="vi" className={`${lora.variable} ${jakarta.variable} antialiased`}>
+    // data-theme do script trong <head> gắn trước khi hydrate → bỏ qua cảnh báo lệch thuộc tính
+    <html lang="vi" className={`${fraunces.variable} ${vietnam.variable} antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-dvh">
         <Providers>{children}</Providers>
       </body>

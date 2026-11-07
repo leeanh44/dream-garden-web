@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Suspense, type ReactNode } from 'react'
 import { AppLogo } from '@/components/icons'
 import { MainNav } from '@/components/main-nav'
+import { ThemeMenu } from '@/components/theme-menu'
 import { APP_NAME } from '@/lib/garden'
 
 export function AppShell({ account, children }: { account: ReactNode; children: ReactNode }) {
@@ -10,7 +11,7 @@ export function AppShell({ account, children }: { account: ReactNode; children: 
       <header className="sticky top-0 z-30 border-b border-surface-container-high/70 bg-surface/80 pt-[env(safe-area-inset-top)] backdrop-blur-xl backdrop-saturate-150">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 lg:gap-8">
           <Link href="/" className="group flex shrink-0 items-center gap-2.5" aria-label={`${APP_NAME} — Kho cây`}>
-            <AppLogo priority className="h-10 w-10 shadow-[0_4px_12px_-4px_rgba(0,79,51,0.35)] transition-transform duration-300 group-hover:-rotate-6" />
+            <AppLogo priority className="h-10 w-10 shadow-leaf transition-transform duration-300 group-hover:-rotate-6" />
             <span className="font-serif text-xl leading-none font-semibold text-primary">{APP_NAME}</span>
           </Link>
 
@@ -18,7 +19,10 @@ export function AppShell({ account, children }: { account: ReactNode; children: 
             <MainNav variant="top" />
           </Suspense>
 
-          <div className="ml-auto flex items-center">{account}</div>
+          <div className="ml-auto flex items-center gap-2">
+            <ThemeMenu />
+            {account}
+          </div>
         </div>
       </header>
 
