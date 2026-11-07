@@ -40,7 +40,7 @@ async function AccountMenu() {
     <form action="/auth/signout" method="post" className="flex items-center gap-2">
       {email ? (
         <span
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary-fixed to-secondary-container font-serif text-base font-semibold text-primary uppercase ring-2 ring-surface-container-lowest"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary-container font-serif text-base font-semibold text-primary uppercase ring-2 ring-surface-container-lowest"
           title={email}
           aria-label={email}
         >

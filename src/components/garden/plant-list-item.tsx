@@ -80,7 +80,7 @@ export function PlantListItem({
         <div className="mt-auto flex items-center justify-between gap-2 pt-2 text-xs">
           <span className="text-on-surface-variant">{leafCount > 0 ? `${leafCount} lá` : 'Chưa ghi nhận'}</span>
           {!isSold && plant.market_value != null ? (
-            <span className="font-bold text-primary">{formatCompactVnd(plant.market_value)} ₫</span>
+            <span className="font-bold text-warm">{formatCompactVnd(plant.market_value)} ₫</span>
           ) : null}
         </div>
       </div>

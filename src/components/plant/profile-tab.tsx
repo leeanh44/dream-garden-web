@@ -138,7 +138,7 @@ export function ProfileTab({ plant }: { plant: Plant }) {
       </form>
 
       <aside className="space-y-4 lg:sticky lg:top-[calc(env(safe-area-inset-top)+9rem)]">
-        <div className="card space-y-2 bg-gradient-to-br from-secondary-container/40 to-surface-container-lowest p-5 text-sm">
+        <div className="card space-y-2 p-5 text-sm">
           <p className="flex items-center gap-2 font-serif text-lg font-semibold text-primary">
             <SparkleIcon /> Thông tin AI
           </p>

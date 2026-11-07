@@ -3,7 +3,7 @@
  * - Điều hướng trang → luôn lấy mạng (dữ liệu cần đăng nhập), mất mạng thì hiện /offline.html.
  * - Không đụng tới Supabase (API, ảnh) — ảnh đã có HTTP cache + signed URL bền.
  */
-const VERSION = 'v2'
+const VERSION = 'v3'
 const STATIC_CACHE = `dg-static-${VERSION}`
 const PRECACHE = ['/offline.html', '/icons/icon-192.png', '/manifest.webmanifest']
 

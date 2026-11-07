@@ -1,49 +1,128 @@
 @import "tailwindcss";
 
-/* Design tokens "Botanical Essence" — đồng bộ với app iOS (garden-app/src/index.css) */
+/*
+ * Design tokens "Nhà kính đêm" — 2 chế độ sáng / tối.
+ * Tên token giữ nguyên (surface, primary…) nên mọi component tự đổi theo chế độ.
+ * Giá trị thật nằm ở --dg-* bên dưới, đổi theo <html data-theme="light|dark">.
+ */
+@theme inline {
+  --color-surface: var(--dg-surface);
+  --color-surface-dim: var(--dg-surface-dim);
+  --color-surface-bright: var(--dg-surface);
+  --color-surface-container-lowest: var(--dg-container-lowest);
+  --color-surface-container-low: var(--dg-container-low);
+  --color-surface-container: var(--dg-container);
+  --color-surface-container-high: var(--dg-container-high);
+  --color-surface-container-highest: var(--dg-container-highest);
+  --color-on-surface: var(--dg-on-surface);
+  --color-on-surface-variant: var(--dg-on-surface-variant);
+  --color-inverse-surface: var(--dg-on-surface);
+  --color-inverse-on-surface: var(--dg-surface);
+  --color-outline: var(--dg-outline);
+  --color-outline-variant: var(--dg-outline-variant);
+  --color-primary: var(--dg-primary);
+  --color-on-primary: var(--dg-on-primary);
+  --color-primary-container: var(--dg-primary-container);
+  --color-on-primary-container: var(--dg-on-primary-container);
+  --color-secondary: var(--dg-secondary);
+  --color-on-secondary: var(--dg-on-primary);
+  --color-secondary-container: var(--dg-secondary-container);
+  --color-on-secondary-container: var(--dg-primary);
+  --color-tertiary: var(--dg-tertiary);
+  --color-on-tertiary: var(--dg-on-primary);
+  --color-tertiary-container: var(--dg-tertiary-container);
+  --color-on-tertiary-container: var(--dg-on-tertiary-container);
+  --color-error: var(--dg-error);
+  --color-on-error: var(--dg-on-error);
+  --color-error-container: var(--dg-error-container);
+  --color-on-error-container: var(--dg-on-error-container);
+  --color-primary-fixed: var(--dg-primary-fixed);
+  --color-primary-fixed-dim: var(--dg-primary-fixed-dim);
+  --color-success-green: var(--dg-success);
+  /* Màu đất nung — cảnh báo nhẹ, giá trị */
+  --color-warm: var(--dg-warm);
+
+  --font-serif: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-vietnam), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --shadow-leaf: var(--dg-shadow-leaf);
+  --shadow-leaf-lg: var(--dg-shadow-leaf-lg);
+  --shadow-fab: var(--dg-shadow-fab);
+}
+
+/* Chế độ sáng: giấy dó, mực rêu, lá bàng */
+:root {
+  color-scheme: light;
+  --dg-surface: #f5f1e6;
+  --dg-surface-dim: #e4dfd0;
+  --dg-container-lowest: #ffffff;
+  --dg-container-low: #faf7ef;
+  --dg-container: #eee9dc;
+  --dg-container-high: #e6e1d2;
+  --dg-container-highest: #ddd7c6;
+  --dg-on-surface: #17241c;
+  --dg-on-surface-variant: #4e5e52;
+  --dg-outline: #67736a;
+  --dg-outline-variant: #d5cfbc;
+  --dg-primary: #2f5d3a;
+  --dg-on-primary: #f8f5ec;
+  --dg-primary-container: #3b6e47;
+  --dg-on-primary-container: #dcefc4;
+  --dg-secondary: #4f6b57;
+  --dg-secondary-container: #e3ecdc;
+  --dg-tertiary: #344845;
+  --dg-tertiary-container: #dde5e2;
+  --dg-on-tertiary-container: #2c3d3a;
+  --dg-error: #b3261e;
+  --dg-on-error: #ffffff;
+  --dg-error-container: #f9deda;
+  --dg-on-error-container: #7a1a12;
+  --dg-primary-fixed: #dcebc0;
+  --dg-primary-fixed-dim: #bfd99a;
+  --dg-success: #2f7a4a;
+  --dg-warm: #a4521c;
+  --dg-shadow-leaf: 0 10px 34px -12px rgba(40, 60, 45, 0.16);
+  --dg-shadow-leaf-lg: 0 24px 56px -20px rgba(40, 60, 45, 0.3);
+  --dg-shadow-fab: 0 14px 30px -8px rgba(47, 93, 58, 0.45);
+}
+
+/* Chế độ tối: rêu thẫm, kem Albo, lộc non */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --dg-surface: #0e1c15;
+  --dg-surface-dim: #0a1510;
+  --dg-container-lowest: #15271e;
+  --dg-container-low: #132219;
+  --dg-container: #1a2e24;
+  --dg-container-high: #22392d;
+  --dg-container-highest: #2b4537;
+  --dg-on-surface: #f2ecdd;
+  --dg-on-surface-variant: #a7b6a9;
+  --dg-outline: #869889;
+  --dg-outline-variant: #2b4537;
+  --dg-primary: #cde59a;
+  --dg-on-primary: #0e1c15;
+  --dg-primary-container: #b5d07e;
+  --dg-on-primary-container: #1b3324;
+  --dg-secondary: #9fb8a3;
+  --dg-secondary-container: #22392d;
+  --dg-tertiary: #b9ccc6;
+  --dg-tertiary-container: #2b4537;
+  --dg-on-tertiary-container: #c2d9d4;
+  --dg-error: #ffb4a6;
+  --dg-on-error: #3b0a06;
+  --dg-error-container: #4a1d17;
+  --dg-on-error-container: #ffdad4;
+  --dg-primary-fixed: #2c4a33;
+  --dg-primary-fixed-dim: #3a5c3f;
+  --dg-success: #9fd9a8;
+  --dg-warm: #e7a06a;
+  --dg-shadow-leaf: 0 10px 34px -12px rgba(0, 0, 0, 0.55);
+  --dg-shadow-leaf-lg: 0 24px 56px -20px rgba(0, 0, 0, 0.7);
+  --dg-shadow-fab: 0 14px 30px -8px rgba(205, 229, 154, 0.3);
+}
+
 @theme {
-  --color-surface: #f7faf9;
-  --color-surface-dim: #d7dbda;
-  --color-surface-bright: #f7faf9;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f1f4f3;
-  --color-surface-container: #ebeeed;
-  --color-surface-container-high: #e6e9e8;
-  --color-surface-container-highest: #e0e3e2;
-  --color-on-surface: #181c1c;
-  --color-on-surface-variant: #3f4942;
-  --color-inverse-surface: #2d3131;
-  --color-inverse-on-surface: #eef1f0;
-  --color-outline: #6f7a72;
-  --color-outline-variant: #bec9c0;
-  --color-primary: #004f33;
-  --color-on-primary: #ffffff;
-  --color-primary-container: #006a46;
-  --color-on-primary-container: #91e7b9;
-  --color-secondary: #3a6758;
-  --color-on-secondary: #ffffff;
-  --color-secondary-container: #bcedda;
-  --color-on-secondary-container: #406d5e;
-  --color-tertiary: #344845;
-  --color-on-tertiary: #ffffff;
-  --color-tertiary-container: #4b605c;
-  --color-on-tertiary-container: #c2d9d4;
-  --color-error: #ba1a1a;
-  --color-on-error: #ffffff;
-  --color-error-container: #ffdad6;
-  --color-on-error-container: #93000a;
-  --color-primary-fixed: #9ef4c6;
-  --color-primary-fixed-dim: #82d8ab;
-  --color-success-green: #00855a;
-
-  /* Lora thay Libre Caslon Text vì Caslon không có subset tiếng Việt */
-  --font-serif: var(--font-lora), Georgia, serif;
-  --font-sans: var(--font-jakarta), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-
-  --shadow-leaf: 0 10px 40px -10px rgba(0, 106, 70, 0.14);
-  --shadow-leaf-lg: 0 24px 60px -18px rgba(0, 79, 51, 0.28);
-  --shadow-fab: 0 14px 34px -8px rgba(0, 79, 51, 0.55);
-
   --animate-fade-up: fade-up 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
   --animate-fade-in: fade-in 0.35s ease-out backwards;
   --animate-sway: sway 4s ease-in-out infinite;
@@ -83,10 +162,7 @@ html {
 
 body {
   background-color: var(--color-surface);
-  background-image:
-    radial-gradient(60rem 30rem at 110% -10%, rgba(158, 244, 198, 0.28), transparent 60%),
-    radial-gradient(50rem 28rem at -20% 10%, rgba(188, 237, 218, 0.35), transparent 60%);
-  background-repeat: no-repeat;
+  transition: background-color 0.3s ease, color 0.3s ease;
   color: var(--color-on-surface);
   font-family: var(--font-sans);
   -webkit-tap-highlight-color: transparent;
@@ -107,7 +183,7 @@ body {
   }
 
   .btn-primary {
-    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-primary-container to-primary px-6 font-semibold whitespace-nowrap text-on-primary shadow-[0_8px_20px_-8px_rgba(0,79,51,0.6)] transition-[transform,box-shadow,opacity] hover:shadow-[0_12px_26px_-8px_rgba(0,79,51,0.65)] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 font-semibold whitespace-nowrap text-on-primary shadow-fab transition-[transform,box-shadow,opacity,filter] hover:brightness-110 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50;
   }
 
   .btn-secondary {
@@ -128,10 +204,10 @@ body {
   .chip[aria-pressed='true'],
   .chip[aria-checked='true'],
   .chip[aria-selected='true'] {
-    @apply bg-primary text-on-primary shadow-[0_6px_16px_-8px_rgba(0,79,51,0.7)];
+    @apply bg-primary text-on-primary;
   }
   .chip:not([aria-pressed='true'], [aria-checked='true'], [aria-selected='true']) {
-    @apply bg-surface-container-lowest text-on-surface-variant ring-1 ring-outline-variant/50 hover:bg-surface-container-low;
+    @apply bg-transparent text-on-surface ring-1 ring-outline-variant ring-inset hover:bg-surface-container;
   }
 
   .pill {
@@ -139,11 +215,11 @@ body {
   }
 
   .card {
-    @apply rounded-3xl bg-surface-container-lowest shadow-leaf ring-1 ring-surface-container-high/60;
+    @apply rounded-3xl bg-surface-container-lowest shadow-leaf ring-1 ring-surface-container-high;
   }
 
   .eyebrow {
-    @apply text-[11px] font-bold tracking-[0.2em] text-secondary uppercase;
+    @apply text-[11px] font-bold tracking-[0.22em] text-on-surface-variant uppercase;
   }
 
   .skeleton {

@@ -40,7 +40,7 @@ export function TopTrending({ plants }: { plants: Plant[] }) {
                 className="aspect-[4/5] w-full transition-transform duration-700 group-hover:scale-105"
               />
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-              <span className="pill absolute top-3 left-3 bg-primary-fixed text-primary shadow">
+              <span className="pill absolute top-3 left-3 bg-primary text-on-primary shadow">
                 <StarIcon className="h-3 w-3" /> 10
               </span>
               <div className="absolute inset-x-0 bottom-0 p-4 text-white">
