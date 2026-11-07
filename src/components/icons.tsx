@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import type { SVGProps } from 'react'
-import leafArt from '@/assets/brand/icon-leaf.png'
-import logoArt from '@/assets/brand/logo.png'
+import leafArt from '@/assets/brand/icon-leaf.webp'
+import logoArt from '@/assets/brand/logo.webp'
 
 /**
  * Icon SVG nội tuyến — thay emoji vì emoji lệch baseline / khác nhau giữa các hệ điều hành.
@@ -50,7 +50,7 @@ export function LeafIcon({ size = '1em', className = '', ...props }: IconProps) 
 export function LeafArtIcon({ className = '' }: { className?: string }) {
   return (
     <span className={`relative inline-block shrink-0 ${className}`} aria-hidden="true">
-      <Image src={leafArt} alt="" fill sizes="64px" className="object-contain drop-shadow-[0_2px_3px_rgba(0,40,20,0.25)]" />
+      <Image src={leafArt} alt="" fill unoptimized className="object-contain drop-shadow-[0_2px_3px_rgba(0,40,20,0.25)]" />
     </span>
   )
 }
@@ -59,7 +59,7 @@ export function LeafArtIcon({ className = '' }: { className?: string }) {
 export function LeafPlusIcon({ className = '' }: { className?: string }) {
   return (
     <span className={`relative inline-block shrink-0 ${className}`} aria-hidden="true">
-      <Image src={leafArt} alt="" fill sizes="64px" className="object-contain drop-shadow-[0_2px_3px_rgba(0,40,20,0.25)]" />
+      <Image src={leafArt} alt="" fill unoptimized className="object-contain drop-shadow-[0_2px_3px_rgba(0,40,20,0.25)]" />
       <span className="absolute -right-[12%] -bottom-[12%] flex h-[42%] w-[42%] items-center justify-center rounded-full bg-primary text-white ring-2 ring-white">
         <svg viewBox="0 0 24 24" className="h-[70%] w-[70%]" fill="none" stroke="currentColor" strokeWidth={3.4} strokeLinecap="round">
           <path d="M12 6v12M6 12h12" />
@@ -69,14 +69,14 @@ export function LeafPlusIcon({ className = '' }: { className?: string }) {
   )
 }
 
-/** Logo Dream's Garden (ảnh `logo.png`). Bo góc bằng CSS để cắt phần nền trắng ở 4 góc ảnh gốc. */
+/** Logo Dream's Garden (ảnh `logo.webp`, 288px — ảnh tĩnh nhỏ nên phục vụ thẳng, không qua /_next/image). Bo góc bằng CSS để cắt phần nền trắng ở 4 góc ảnh gốc. */
 export function AppLogo({ className = '', priority = false }: { className?: string; priority?: boolean }) {
   return (
     <Image
       src={logoArt}
       alt=""
       aria-hidden="true"
-      sizes="(min-width: 768px) 64px, 48px"
+      unoptimized
       priority={priority}
       className={`shrink-0 rounded-[24%] object-cover ${className}`}
     />

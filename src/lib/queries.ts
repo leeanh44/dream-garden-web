@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { Plant, TimelineEntry } from '@/lib/garden'
+import { useServerDataPending } from '@/lib/server-data-pending'
 import { PLANTS_QUERY_KEY, getPlantCoverPath, selectPlants } from '@/lib/plants-data'
 import {
   PHOTOS_BUCKET,
@@ -15,7 +16,7 @@ import {
   primeSignedUrls,
 } from '@/lib/photos'
 
-const supabase = () => getSupabaseBrowserClient()
+const supabase = getSupabaseBrowserClient
 
 const throwIfError = <T>({ data, error }: { data: T; error: { message: string } | null }) => {
   if (error) {
@@ -26,7 +27,7 @@ const throwIfError = <T>({ data, error }: { data: T; error: { message: string } 
 }
 
 const getCurrentUserId = async () => {
-  const { data } = await supabase().auth.getSession()
+  const { data } = await (await supabase()).auth.getSession()
   const userId = data.session?.user.id
   if (!userId) {
     throw new Error('Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.')
@@ -39,7 +40,7 @@ const getCurrentUserId = async () => {
 // ---------------------------------------------------------------------------
 
 const fetchPlants = async (): Promise<Plant[]> => {
-  const plants = await selectPlants(supabase())
+  const plants = await selectPlants(await supabase())
   // Xin signed URL cho thumbnail mọi cây trong 1 request, song song với lúc React render danh sách
   primeSignedUrls(plants.map(getPlantCoverPath))
   return plants
@@ -49,8 +50,14 @@ const fetchPlants = async (): Promise<Plant[]> => {
  * Toàn bộ kho cây (kèm nhật ký lá) — vườn cá nhân nên tải 1 lần là đủ.
  * `enabled: false` khi trang đang chờ dữ liệu server gửi kèm HTML (vẫn trả về dữ liệu đã cache).
  */
-export const usePlants = ({ enabled = true }: { enabled?: boolean } = {}) =>
-  useQuery({ queryKey: PLANTS_QUERY_KEY, queryFn: fetchPlants, enabled })
+/**
+ * Toàn bộ kho cây (kèm nhật ký lá) — vườn cá nhân nên tải 1 lần là đủ.
+ * Không tự gọi Supabase khi trang đang chờ dữ liệu server gửi kèm HTML (vẫn trả về dữ liệu đã cache).
+ */
+export const usePlants = () => {
+  const serverDataPending = useServerDataPending()
+  return useQuery({ queryKey: PLANTS_QUERY_KEY, queryFn: fetchPlants, enabled: !serverDataPending })
+}
 
 export const usePlant = (plantId: string) => {
   const query = usePlants()
@@ -96,7 +103,7 @@ export const useCreatePlant = () => {
   const invalidate = useInvalidatePlants()
   return useMutation({
     mutationFn: async (input: PlantInput & { name: string }) =>
-      throwIfError(await supabase().from('plants').insert(input).select('id').single()),
+      throwIfError(await (await supabase()).from('plants').insert(input).select('id').single()),
     onSuccess: invalidate,
   })
 }
@@ -105,7 +112,7 @@ export const useUpdatePlant = () => {
   const invalidate = useInvalidatePlants()
   return useMutation({
     mutationFn: async ({ id, ...input }: PlantInput & { id: string }) =>
-      throwIfError(await supabase().from('plants').update(input).eq('id', id)),
+      throwIfError(await (await supabase()).from('plants').update(input).eq('id', id)),
     onSuccess: invalidate,
   })
 }
@@ -117,7 +124,7 @@ const removePhotoFiles = async (entries: Pick<TimelineEntry, 'photo_path' | 'thu
   if (paths.length > 0) {
     forgetSignedUrls(paths)
     // Lỗi xóa file không chặn việc xóa dữ liệu — file mồ côi chỉ tốn dung lượng.
-    await supabase().storage.from(PHOTOS_BUCKET).remove(paths)
+    await (await supabase()).storage.from(PHOTOS_BUCKET).remove(paths)
   }
 }
 
@@ -125,7 +132,7 @@ export const useDeletePlant = () => {
   const invalidate = useInvalidatePlants()
   return useMutation({
     mutationFn: async (plant: Plant) => {
-      throwIfError(await supabase().from('plants').delete().eq('id', plant.id))
+      throwIfError(await (await supabase()).from('plants').delete().eq('id', plant.id))
       await removePhotoFiles(plant.timeline_entries)
     },
     onSuccess: invalidate,
@@ -166,7 +173,7 @@ export const useAddTimelinePhotos = (defaultPlantId?: string) => {
           const id = crypto.randomUUID()
           const photoPath = `${userId}/${plantId}/${id}.jpg`
           const thumbPath = `${userId}/${plantId}/${id}_thumb.jpg`
-          const bucket = supabase().storage.from(PHOTOS_BUCKET)
+          const bucket = (await supabase()).storage.from(PHOTOS_BUCKET)
 
           const options = { contentType: 'image/jpeg', cacheControl: PHOTO_CACHE_CONTROL }
           // Tải song song bản full + thumbnail
@@ -180,7 +187,7 @@ export const useAddTimelinePhotos = (defaultPlantId?: string) => {
             throw uploadError
           }
 
-          const { error } = await supabase().from('timeline_entries').insert({
+          const { error } = await (await supabase()).from('timeline_entries').insert({
             id,
             plant_id: plantId,
             photo_path: photoPath,
@@ -211,7 +218,7 @@ export const useUpdateTimelineEntry = () => {
       id,
       ...input
     }: Partial<Pick<TimelineEntry, 'note' | 'taken_at'>> & { id: string }) =>
-      throwIfError(await supabase().from('timeline_entries').update(input).eq('id', id)),
+      throwIfError(await (await supabase()).from('timeline_entries').update(input).eq('id', id)),
     onSuccess: invalidate,
   })
 }
@@ -220,7 +227,7 @@ export const useDeleteTimelineEntry = () => {
   const invalidate = useInvalidatePlants()
   return useMutation({
     mutationFn: async (entry: TimelineEntry) => {
-      throwIfError(await supabase().from('timeline_entries').delete().eq('id', entry.id))
+      throwIfError(await (await supabase()).from('timeline_entries').delete().eq('id', entry.id))
       await removePhotoFiles([entry])
     },
     onSuccess: invalidate,
@@ -246,7 +253,7 @@ export const useToggleFeatured = () => {
 
   return useMutation({
     mutationFn: async ({ entry, featured }: { entry: TimelineEntry; featured: boolean }) => {
-      const { error } = await supabase()
+      const { error } = await (await supabase())
         .from('timeline_entries')
         .update({ featured_at: featured ? new Date().toISOString() : null })
         .eq('id', entry.id)

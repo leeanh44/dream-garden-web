@@ -1,4 +1,5 @@
 import { QueryClient, dehydrate, type DehydratedState } from '@tanstack/react-query'
+import type { Plant } from '@/lib/garden'
 import { PHOTOS_BUCKET, SIGNED_URL_TTL_SECONDS } from '@/lib/photos'
 import { PLANTS_QUERY_KEY, getPlantCoverPath, selectPlants } from '@/lib/plants-data'
 import { isSupabaseConfigured } from '@/lib/supabase/env'
@@ -16,7 +17,9 @@ export type InitialGarden = {
  * Client không còn phải chờ JS chạy xong mới gọi Supabase 2 lượt nối tiếp.
  * Lỗi → `null`, trang tự lấy dữ liệu phía client như trước.
  */
-export const getInitialGarden = async (): Promise<InitialGarden | null> => {
+export const getInitialGarden = async (
+  extraPaths?: (plants: Plant[]) => (string | null | undefined)[],
+): Promise<InitialGarden | null> => {
   if (!isSupabaseConfigured) {
     return null
   }
@@ -24,7 +27,11 @@ export const getInitialGarden = async (): Promise<InitialGarden | null> => {
     const supabase = await createSupabaseServerClient()
     const plants = await selectPlants(supabase)
 
-    const paths = [...new Set(plants.map(getPlantCoverPath).filter((path): path is string => Boolean(path)))]
+    const paths = [
+      ...new Set(
+        [...plants.map(getPlantCoverPath), ...(extraPaths?.(plants) ?? [])].filter((path): path is string => Boolean(path)),
+      ),
+    ]
     const signedAt = Date.now()
     const signedUrls: Record<string, string> = {}
     if (paths.length > 0) {
