@@ -256,3 +256,9 @@ export const DeviceIcon = (props: IconProps) => (
     <path d="M11 18.5h2" />
   </svg>
 )
+
+export const ShuffleIcon = (props: IconProps) => (
+  <svg {...base(props)}>
+    <path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
+  </svg>
+)

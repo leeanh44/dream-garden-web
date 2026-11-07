@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useDeferredValue, useMemo, useState } from 'react'
 import { AddPlantDialog } from '@/components/garden/add-plant-dialog'
+import { GardenMoments, MilestoneCards } from '@/components/garden/garden-moments'
 import { PlantListItem } from '@/components/garden/plant-list-item'
 import { InstallBanner } from '@/components/pwa/install-banner'
 import { TopTrending } from '@/components/garden/top-trending'
@@ -106,6 +107,9 @@ export function GardenView() {
         totalValue={totalValue}
         onAdd={() => setIsAddOpen(true)}
       />
+
+      <MilestoneCards plants={activePlants} />
+      <GardenMoments plants={activePlants} />
 
       <InstallBanner />
 
