@@ -14,6 +14,11 @@ export type Terrace = {
   bulbMaterial: THREE.MeshBasicMaterial
   /** Lưới che nắng + mái tôn: mờ đi khi camera ở phía trên để nhìn thấy cây bên dưới */
   canopies: { material: THREE.Material & { opacity: number }; height: number; opacity: number; faded: number }[]
+  /** Nhà hàng xóm: ẩn khi nằm giữa camera và vườn (xoay 360°) */
+  occluders: THREE.Object3D[]
+  /** Đồ gắn tường phải + toạ độ X của tường: camera vượt ra ngoài thì ẩn */
+  sideWallItems: THREE.Group
+  sideWallX: number
 }
 
 // ---------------------------------------------------------------------------
@@ -320,31 +325,46 @@ export const buildTerrace = (): Terrace => {
   // Sàn, tường sau, tường phải
   const floor = box(7.3, 0.2, 5.6, new THREE.MeshStandardMaterial({ map: concreteTexture(), roughness: 0.75 }), 0.55, -0.1, 0.65)
   floor.castShadow = false
-  const backWall = box(7.25, 2.6, 0.1, new THREE.MeshStandardMaterial({ map: wallTexture(21), roughness: 0.7, metalness: 0.15 }), 0.55, 1.3, -2.1)
-  const sideWall = box(0.1, 2.6, 4.3, new THREE.MeshStandardMaterial({ map: wallTexture(33), roughness: 0.7, metalness: 0.15 }), 4.15, 1.3, 0)
+  // Tường chỉ có mặt trong (kiểu nhà búp bê): vòng camera ra sau thì nhìn xuyên vào vườn,
+  // shadowSide = DoubleSide để tường vẫn đổ bóng từ mọi phía
+  const wall = (seed: number, width: number) =>
+    solid(
+      new THREE.Mesh(
+        new THREE.PlaneGeometry(width, 2.6),
+        new THREE.MeshStandardMaterial({ map: wallTexture(seed), roughness: 0.7, metalness: 0.15, shadowSide: THREE.DoubleSide }),
+      ),
+    )
+  const backWall = wall(21, 7.25)
+  backWall.position.set(0.55, 1.3, -2.06)
+  const sideWall = wall(33, 4.3)
+  sideWall.position.set(4.1, 1.3, 0)
+  sideWall.rotation.y = -Math.PI / 2
   group.add(floor, backWall, sideWall)
 
-  // Cửa sổ lá sách + kệ dụng cụ + túi treo trên tường phải
+  // Cửa sổ lá sách + kệ dụng cụ + túi treo trên tường phải (ẩn khi camera ra ngoài tường này)
+  const sideWallItems = new THREE.Group()
   const louver = standard('#55635e', 0.5, 0.3)
-  group.add(box(0.04, 1.0, 1.15, standard('#3b4743', 0.6), 4.09, 1.85, 0.75))
+  sideWallItems.add(box(0.04, 1.0, 1.15, standard('#3b4743', 0.6), 4.09, 1.85, 0.75))
   for (let slat = 0; slat < 8; slat++) {
     const mesh = box(0.12, 0.018, 1.05, louver, 4.04, 1.42 + slat * 0.12, 0.75)
     mesh.rotation.z = 0.55
-    group.add(mesh)
+    sideWallItems.add(mesh)
   }
-  group.add(box(0.36, 0.03, 1.0, standard('#9b8f7a'), 3.92, 1.78, -1.3))
+  sideWallItems.add(box(0.36, 0.03, 1.0, standard('#9b8f7a'), 3.92, 1.78, -1.3))
   const bottleColors = ['#e4e2dc', '#2f63c4', '#d8d4c4', '#c2342b', '#f2c94c', '#ffffff']
   bottleColors.forEach((color, index) => {
     const height = 0.14 + (index % 3) * 0.06
     const bottle = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, height, 12), standard(color, 0.4))
     bottle.position.set(3.9, 1.795 + height / 2, -1.15 + index * 0.09)
-    group.add(solid(bottle))
+    sideWallItems.add(solid(bottle))
   })
   const canister = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.3, 20), standard('#b9bcbd', 0.3, 0.8))
   canister.position.set(3.88, 1.945, -1.6)
-  group.add(solid(canister))
-  group.add(lathe([[0, 0], [0.1, 0], [0.13, 0.2], [0.12, 0.2]], standard('#1b1c1b', 0.6), 3.9, -0.85, 1.795))
-  group.add(box(0.05, 0.42, 0.32, standard('#8b6c4c', 0.9), 4.07, 1.35, -0.55))
+  sideWallItems.add(solid(canister))
+  sideWallItems.add(lathe([[0, 0], [0.1, 0], [0.13, 0.2], [0.12, 0.2]], standard('#1b1c1b', 0.6), 3.9, -0.85, 1.795))
+  sideWallItems.add(box(0.05, 0.42, 0.32, standard('#8b6c4c', 0.9), 4.07, 1.35, -0.55))
+
+  group.add(sideWallItems)
 
   // Tường lửng trái + ván đặt chậu + lưới B40 + cột gỗ
   group.add(box(0.16, 0.95, 5.6, standard('#7a7d76', 0.95), -3.08, 0.475, 0.65))
@@ -420,18 +440,22 @@ export const buildTerrace = (): Terrace => {
   blueBand.position.set(3.42, 0.08, -0.25)
   group.add(blueBand)
 
-  // Nhà hàng xóm phía sau (mờ trong sương)
+  // Nhà hàng xóm xung quanh (mờ trong sương)
+  const occluders: THREE.Object3D[] = []
   for (const [width, height, depth, x, z, color] of [
     [3.2, 5.5, 4, -6.2, -1.5, '#e9e7e0'],
     [4.5, 4.2, 3, -5.8, 3.6, '#d5dcd9'],
     [6, 3.6, 3, 0.5, -4.6, '#c9d2cf'],
     [3.5, 6.5, 3, 5.4, -4.4, '#ecebe6'],
   ] as const) {
-    group.add(box(width, height, depth, standard(color, 0.9), x, height / 2 - 3, z))
+    const building = box(width, height, depth, standard(color, 0.9), x, height / 2 - 3, z)
+    occluders.push(building)
+    group.add(building)
   }
-  const neighbourRoof = box(6.2, 0.06, 3.2, standard('#8fc4c0', 0.5, 0.4), 0.5, 0.65, -4.6)
+  // Mái tôn nhà sau gắn vào khối nhà để ẩn cùng
+  const neighbourRoof = box(6.2, 0.06, 3.2, standard('#8fc4c0', 0.5, 0.4), 0, 0.65 - (3.6 / 2 - 3), 0)
   neighbourRoof.rotation.x = 0.18
-  group.add(neighbourRoof)
+  occluders[2].add(neighbourRoof)
 
   // Dây điện chạy ngang trời
   const wire = standard('#151515', 0.6)
@@ -510,5 +534,5 @@ export const buildTerrace = (): Terrace => {
     group.add(bulb, light)
   }
 
-  return { group, lamps, bulbMaterial, canopies }
+  return { group, lamps, bulbMaterial, canopies, occluders, sideWallItems, sideWallX: 4.1 }
 }

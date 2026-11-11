@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Be_Vietnam_Pro, Fraunces } from 'next/font/google'
+import { Plus_Jakarta_Sans } from 'next/font/google'
 import { preconnect } from 'react-dom'
 import { Providers } from '@/components/providers'
 import { APP_NAME } from '@/lib/garden'
@@ -7,20 +7,12 @@ import { SUPABASE_URL } from '@/lib/supabase/env'
 import { THEME_COLORS, THEME_INIT_SCRIPT } from '@/lib/theme'
 import './globals.css'
 
-// Tiêu đề, tên cây (nghiêng cho tên khoa học) — variable font, có tiếng Việt
-const fraunces = Fraunces({
-  variable: '--font-fraunces',
+// Một font cho cả tiêu đề lẫn nội dung — gọn, dễ đọc, dấu tiếng Việt rõ.
+// Variable font (200–800) + nghiêng thật cho tên khoa học.
+const jakarta = Plus_Jakarta_Sans({
+  variable: '--font-jakarta',
   subsets: ['latin', 'vietnamese'],
   style: ['normal', 'italic'],
-  axes: ['opsz'],
-})
-
-// Nội dung — không preload để khỏi giành băng thông (fallback đã chỉnh cỡ nên không xô lệch)
-const vietnam = Be_Vietnam_Pro({
-  variable: '--font-vietnam',
-  subsets: ['latin', 'vietnamese'],
-  weight: ['400', '500', '600', '700'],
-  preload: false,
 })
 
 export const metadata: Metadata = {
@@ -52,7 +44,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   }
   return (
     // data-theme do script trong <head> gắn trước khi hydrate → bỏ qua cảnh báo lệch thuộc tính
-    <html lang="vi" className={`${fraunces.variable} ${vietnam.variable} antialiased`} suppressHydrationWarning>
+    <html lang="vi" className={`${jakarta.variable} antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
