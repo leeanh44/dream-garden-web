@@ -2,8 +2,15 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
-import type { Plant, TimelineEntry } from '@/lib/garden'
+import { toDateInputValue, type Plant, type TimelineEntry } from '@/lib/garden'
 import { useServerDataPending } from '@/lib/server-data-pending'
+import {
+  EMPTY_TRADE_LOGS,
+  appendTradeLogLine,
+  formatTradeLogLine,
+  type Sale,
+  type TradeLogs,
+} from '@/lib/trade'
 import { PLANTS_QUERY_KEY, getPlantCoverPath, selectPlants } from '@/lib/plants-data'
 import {
   PHOTOS_BUCKET,
@@ -91,6 +98,8 @@ export type PlantInput = Partial<
     | 'purchase_price'
     | 'market_value'
     | 'parent_plant_id'
+    | 'is_sold'
+    | 'sold_at'
   >
 >
 
@@ -101,10 +110,21 @@ const useInvalidatePlants = () => {
 
 export const useCreatePlant = () => {
   const invalidate = useInvalidatePlants()
+  const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (input: PlantInput & { name: string }) =>
-      throwIfError(await (await supabase()).from('plants').insert(input).select('id').single()),
-    onSuccess: invalidate,
+    mutationFn: async (input: PlantInput & { name: string }) => {
+      const created = throwIfError(await (await supabase()).from('plants').insert(input).select('id').single())
+      // Giống app iOS: tự ghi 1 dòng vào Nhật ký nhập — lỗi ở đây không chặn việc thêm cây
+      await appendTradeLog(
+        'buy_log',
+        formatTradeLogLine(input.purchased_at ?? toDateInputValue(new Date()), input.name, input.purchase_price ?? null),
+      ).catch(() => {})
+      return created
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: TRADE_LOGS_QUERY_KEY })
+      return invalidate()
+    },
   })
 }
 
@@ -270,5 +290,92 @@ export const useToggleFeatured = () => {
       return { previous: entry.featured_at ?? null }
     },
     onError: (_error, { entry }, context) => setFeatured(entry.id, context?.previous ?? null),
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Giao dịch — lượt xuất + nhật ký nhập / xuất
+// ---------------------------------------------------------------------------
+
+export const SALES_QUERY_KEY = ['sales'] as const
+export const TRADE_LOGS_QUERY_KEY = ['trade-logs'] as const
+
+/** Mọi lượt xuất của vườn, mới nhất trước (truy vấn riêng để lỗi bảng `sales` không làm hỏng Kho cây). */
+export const useSales = () =>
+  useQuery({
+    queryKey: SALES_QUERY_KEY,
+    queryFn: async (): Promise<Sale[]> =>
+      throwIfError(
+        await (await supabase())
+          .from('sales')
+          .select('*')
+          .order('sold_at', { ascending: false })
+          .order('created_at', { ascending: false }),
+      ) as Sale[],
+  })
+
+const fetchTradeLogs = async (): Promise<TradeLogs> => {
+  const { data, error } = await (await supabase()).from('trade_logs').select('buy_log, sell_log').maybeSingle()
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data ?? EMPTY_TRADE_LOGS
+}
+
+export const useTradeLogs = () => useQuery({ queryKey: TRADE_LOGS_QUERY_KEY, queryFn: fetchTradeLogs })
+
+const saveTradeLogs = async (logs: Partial<TradeLogs>) => {
+  const userId = await getCurrentUserId()
+  throwIfError(await (await supabase()).from('trade_logs').upsert({ user_id: userId, ...logs }, { onConflict: 'user_id' }))
+}
+
+/** Đọc bản mới nhất trên server rồi nối thêm dòng — tránh ghi đè chỉnh sửa ở tab khác. */
+const appendTradeLog = async (field: keyof TradeLogs, line: string) => {
+  const current = await fetchTradeLogs()
+  await saveTradeLogs({ [field]: appendTradeLogLine(current[field], line) })
+}
+
+/** Lưu nhật ký nhập / xuất (ô ghi chép tự do, tự lưu khi gõ). */
+export const useSaveTradeLogs = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: saveTradeLogs,
+    onSuccess: (_data, logs) =>
+      queryClient.setQueryData<TradeLogs>(TRADE_LOGS_QUERY_KEY, (previous) => ({ ...(previous ?? EMPTY_TRADE_LOGS), ...logs })),
+  })
+}
+
+/** Ghi một lượt xuất + tự thêm dòng vào Nhật ký xuất. */
+export const useRecordSale = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      plant,
+      soldAt,
+      soldPrice,
+    }: {
+      plant: Pick<Plant, 'id' | 'name'>
+      soldAt: string
+      soldPrice: number | null
+    }) => {
+      throwIfError(
+        await (await supabase()).from('sales').insert({ plant_id: plant.id, sold_at: soldAt, sold_price: soldPrice }),
+      )
+      await appendTradeLog('sell_log', formatTradeLogLine(soldAt, plant.name, soldPrice)).catch(() => {})
+    },
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: SALES_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: TRADE_LOGS_QUERY_KEY }),
+      ]),
+  })
+}
+
+/** Xoá một lượt xuất (dòng trong Nhật ký xuất giữ nguyên — sửa tay nếu cần). */
+export const useDeleteSale = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (sale: Sale) => throwIfError(await (await supabase()).from('sales').delete().eq('id', sale.id)),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: SALES_QUERY_KEY }),
   })
 }

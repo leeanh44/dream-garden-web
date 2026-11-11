@@ -6,6 +6,7 @@ import { ArrowLeftIcon, CameraIcon, FilmIcon, LeafIcon, StarIcon, WalletIcon } f
 import { PlantPhoto } from '@/components/plant-photo'
 import { ProfileTab } from '@/components/plant/profile-tab'
 import { TimelineTab } from '@/components/plant/timeline-tab'
+import { TradeTab } from '@/components/plant/trade-tab'
 import {
   RANK_PILL_CLASSES,
   formatVndAmount,
@@ -23,7 +24,7 @@ type DetailTab = 'timeline' | 'profile' | 'trade'
 const TABS: { id: DetailTab; label: string; icon: ComponentType<{ className?: string }>; comingSoon?: boolean }[] = [
   { id: 'timeline', label: 'Nhật ký', icon: CameraIcon },
   { id: 'profile', label: 'Hồ sơ', icon: LeafIcon },
-  { id: 'trade', label: 'Xuất', icon: WalletIcon, comingSoon: true },
+  { id: 'trade', label: 'Xuất', icon: WalletIcon },
 ]
 
 export function PlantDetail({ plantId }: { plantId: string }) {
@@ -92,6 +93,7 @@ export function PlantDetail({ plantId }: { plantId: string }) {
 
       {tab === 'timeline' ? <TimelineTab plant={plant} /> : null}
       {tab === 'profile' ? <ProfileTab key={plant.id} plant={plant} /> : null}
+      {tab === 'trade' ? <TradeTab key={plant.id} plant={plant} /> : null}
     </div>
   )
 }
