@@ -1,15 +1,17 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import type { PlantRankTier } from '@/lib/garden'
-import { getGardenSize, seededRandom, type Plant3D } from '@/lib/garden3d'
+import { buildTerrace, makeBeam, type Terrace } from '@/components/garden3d/terrace'
+import { seededRandom, type Plant3D } from '@/lib/garden3d'
 import { getSignedPhotoUrl } from '@/lib/photos'
+import type { PotKind } from '@/lib/terrace-layout'
 import type { ResolvedTheme } from '@/lib/theme'
 
 /**
  * Cảnh Vườn 3D dựng bằng three.js thuần (không React) — React chỉ gọi
  * `setPlants` / `setTheme` / `resetView` / `dispose`.
  *
- * Cây sinh thủ tục từ dữ liệu (xem `toPlants3D`): chậu theo hạng, lá monstera vẽ bằng canvas
+ * Nền là sân thượng thật dựng lại từ ảnh (`terrace.ts`); mỗi cây trong kho được đặt vào một chỗ
+ * (`terrace-layout.ts`). Cây sinh thủ tục từ dữ liệu: lá monstera vẽ bằng canvas
  * (đốm cẩm thạch + lỗ xẻ), thẻ polaroid cắm chậu hiện ảnh mới nhất trong Nhật ký.
  */
 
@@ -23,54 +25,47 @@ type SceneOptions = {
 
 type PlantNode = { id: string; foliage: THREE.Group; ring: THREE.Mesh; phase: number }
 
-const BED_HEIGHT = 0.18
-const FRAME_HEIGHT = 2.2
-const LAMP_HEIGHT = 1.5
 const TAP_TOLERANCE_PX = 6
-const FIREFLY_COUNT = 70
+const FIREFLY_COUNT = 45
+/** Tâm nhìn: giữa góc chính và góc mái che */
+const VIEW_TARGET = new THREE.Vector3(0.1, 0.9, -0.8)
+/** Giới hạn góc xoay ngang — ra ngoài sẽ nhìn thấy mặt sau tường */
+const AZIMUTH_LIMIT = 0.9
 
 const PALETTES = {
   light: {
-    background: '#dde6d2',
-    ground: '#cbc3a6',
-    bedWood: '#8b6a48',
-    bedTop: '#6b5a44',
-    frame: '#f3eee1',
-    hemiSky: '#fbf6e6',
-    hemiGround: '#6f7d5c',
-    hemiIntensity: 1.5,
+    background: '#cfdfe4',
+    hemiSky: '#f4f7f2',
+    hemiGround: '#7b7f70',
+    hemiIntensity: 1.4,
     sun: '#fff0d4',
-    sunIntensity: 2.6,
-    sunDirection: new THREE.Vector3(0.6, 1, 0.45),
-    lanternIntensity: 0,
+    sunIntensity: 2.8,
+    sunDirection: new THREE.Vector3(0.45, 1, 0.8),
+    lampIntensity: 0,
     bulb: '#d8d2c2',
     ring: '#2f5d3a',
     exposure: 1,
   },
   dark: {
-    background: '#0b1711',
-    ground: '#132219',
-    bedWood: '#3d2d20',
-    bedTop: '#231a13',
-    frame: '#2f4a3b',
+    background: '#0b1520',
     hemiSky: '#3b5b7a',
     hemiGround: '#0a1510',
     hemiIntensity: 1.1,
     sun: '#a9c2ff',
-    sunIntensity: 0.9,
-    sunDirection: new THREE.Vector3(-0.5, 1, -0.35),
-    lanternIntensity: 5,
+    sunIntensity: 0.8,
+    sunDirection: new THREE.Vector3(-0.4, 1, 0.5),
+    lampIntensity: 4,
     bulb: '#ffd59a',
     ring: '#cde59a',
     exposure: 1.15,
   },
 } as const
 
-const POT_STYLES: Record<PlantRankTier, { color: string; roughness: number; metalness: number }> = {
-  // Top 1: chậu men kem · Top 2: đất nung · Top 3: xi măng
-  top1: { color: '#efe5cf', roughness: 0.32, metalness: 0.05 },
-  top2: { color: '#b5623a', roughness: 0.85, metalness: 0 },
-  top3: { color: '#8e928a', roughness: 0.95, metalness: 0 },
+const POT_STYLES: Record<PotKind, { color: string; roughness: number; metalness: number }> = {
+  nursery: { color: '#1c1d1c', roughness: 0.55, metalness: 0 },
+  white: { color: '#ecebe5', roughness: 0.45, metalness: 0 },
+  terracotta: { color: '#a8552f', roughness: 0.85, metalness: 0 },
+  glazed: { color: '#2c524c', roughness: 0.25, metalness: 0.1 },
 }
 
 // ---------------------------------------------------------------------------
@@ -204,14 +199,6 @@ const makeFireflySprite = () => {
   return texture
 }
 
-/** Thanh gỗ / khung thép nối 2 điểm. */
-const makeBeam = (from: THREE.Vector3, to: THREE.Vector3, thickness: number, material: THREE.Material) => {
-  const beam = new THREE.Mesh(new THREE.BoxGeometry(thickness, thickness, from.distanceTo(to)), material)
-  beam.position.copy(from).add(to).multiplyScalar(0.5)
-  beam.lookAt(to)
-  return beam
-}
-
 /** Giải phóng geometry / material / texture của một nhánh cảnh, trừ material dùng chung. */
 const disposeTree = (root: THREE.Object3D, keep: Set<THREE.Material>) => {
   root.traverse((object) => {
@@ -244,33 +231,23 @@ export class GardenScene {
 
   private readonly hemiLight = new THREE.HemisphereLight()
   private readonly sun = new THREE.DirectionalLight()
-  private readonly ground: THREE.Mesh
+  private readonly terrace: Terrace
 
-  // Material dùng chung — đổi màu theo giao diện, không huỷ khi dựng lại vườn
-  private readonly groundMaterial = new THREE.MeshStandardMaterial({ roughness: 1 })
-  private readonly bedWoodMaterial = new THREE.MeshStandardMaterial({ roughness: 0.85 })
-  private readonly bedTopMaterial = new THREE.MeshStandardMaterial({ roughness: 1 })
-  private readonly frameMaterial = new THREE.MeshStandardMaterial({ roughness: 0.5, metalness: 0.3 })
-  private readonly bulbMaterial = new THREE.MeshBasicMaterial()
+  // Material dùng chung — không huỷ khi dựng lại cây
   private readonly ringMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.9 })
   private readonly hitMaterial = new THREE.MeshBasicMaterial({ visible: false })
+  private readonly wireMaterial = new THREE.MeshStandardMaterial({ color: '#2a2a2a', roughness: 0.6 })
+  private readonly holderMaterial = new THREE.MeshStandardMaterial({ color: '#a8552f', roughness: 0.85 })
   private readonly fireflyMaterial: THREE.PointsMaterial
   private readonly sharedMaterials: Set<THREE.Material>
 
-  /** Luống + khung nhà kính + đèn — dựng lại khi kích thước vườn đổi. */
-  private structure = new THREE.Group()
   private plantsGroup = new THREE.Group()
-  private fireflies: THREE.Points | null = null
-  private fireflyBase: Float32Array = new Float32Array()
-  private lanterns: THREE.PointLight[] = []
-  /** Thanh khung nhà kính + trung điểm — thanh nằm giữa camera và vườn sẽ ẩn để không che cây. */
-  private frameBeams: { mesh: THREE.Mesh; mid: THREE.Vector3 }[] = []
-  private readonly viewDirection = new THREE.Vector3()
+  private fireflies: THREE.Points
+  private fireflyBase: Float32Array
   private nodes: PlantNode[] = []
   private hitMeshes: THREE.Mesh[] = []
 
   private theme: ResolvedTheme = 'light'
-  private radius = 2
   private hoveredId: string | null = null
   private pointerDown: { x: number; y: number } | null = null
   /** Tăng mỗi lần dựng lại cây → ảnh tải về muộn của lượt cũ bị bỏ qua. */
@@ -294,10 +271,13 @@ export class GardenScene {
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement)
     this.controls.enableDamping = true
-    this.controls.maxPolarAngle = 1.42
-    this.controls.minDistance = 1.5
+    this.controls.maxPolarAngle = 1.38
+    this.controls.minDistance = 1.2
+    this.controls.maxDistance = 9
+    this.controls.minAzimuthAngle = -AZIMUTH_LIMIT
+    this.controls.maxAzimuthAngle = AZIMUTH_LIMIT
     this.controls.autoRotate = !options.reducedMotion
-    this.controls.autoRotateSpeed = 0.35
+    this.controls.autoRotateSpeed = 0.3
     // Người dùng tự xoay → thôi tự quay
     this.controls.addEventListener('start', () => {
       this.controls.autoRotate = false
@@ -307,30 +287,46 @@ export class GardenScene {
     this.sun.shadow.mapSize.setScalar(window.innerWidth < 768 ? 1024 : 2048)
     this.sun.shadow.bias = -0.0005
     this.sun.shadow.normalBias = 0.02
+    const shadow = this.sun.shadow.camera
+    shadow.left = -5.5
+    shadow.right = 5.5
+    shadow.top = 5.5
+    shadow.bottom = -5.5
+    shadow.near = 0.5
+    shadow.far = 30
+    shadow.updateProjectionMatrix()
     this.scene.add(this.hemiLight, this.sun, this.sun.target)
 
-    this.ground = new THREE.Mesh(new THREE.CircleGeometry(80, 48).rotateX(-Math.PI / 2), this.groundMaterial)
-    this.ground.receiveShadow = true
-    this.scene.add(this.ground, this.structure, this.plantsGroup)
+    this.terrace = buildTerrace()
+    this.scene.add(this.terrace.group, this.plantsGroup)
 
+    // Đom đóm trên sân (chỉ hiện ở chế độ tối)
     this.fireflyMaterial = new THREE.PointsMaterial({
-      size: 0.09,
+      size: 0.07,
       map: makeFireflySprite(),
       color: '#e9ff9a',
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     })
+    const positions = new Float32Array(FIREFLY_COUNT * 3)
+    const random = seededRandom(42)
+    for (let index = 0; index < FIREFLY_COUNT; index++) {
+      positions[index * 3] = -2.6 + random() * 6.2
+      positions[index * 3 + 1] = 0.4 + random() * 1.8
+      positions[index * 3 + 2] = -1.7 + random() * 4.5
+    }
+    this.fireflyBase = positions.slice()
+    const fireflyGeometry = new THREE.BufferGeometry()
+    fireflyGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+    this.fireflies = new THREE.Points(fireflyGeometry, this.fireflyMaterial)
+    this.scene.add(this.fireflies)
 
     this.sharedMaterials = new Set<THREE.Material>([
-      this.groundMaterial,
-      this.bedWoodMaterial,
-      this.bedTopMaterial,
-      this.frameMaterial,
-      this.bulbMaterial,
       this.ringMaterial,
       this.hitMaterial,
-      this.fireflyMaterial,
+      this.wireMaterial,
+      this.holderMaterial,
     ])
 
     const canvas = this.renderer.domElement
@@ -344,6 +340,7 @@ export class GardenScene {
     this.resize()
 
     this.setTheme('light')
+    this.resetView()
     this.renderer.setAnimationLoop(this.tick)
   }
 
@@ -355,26 +352,21 @@ export class GardenScene {
     this.theme = theme
     const palette = PALETTES[theme]
     this.scene.background = new THREE.Color(palette.background)
-    this.scene.fog = new THREE.Fog(palette.background, this.radius * 3 + 6, this.radius * 7 + 18)
+    this.scene.fog = new THREE.Fog(palette.background, 12, 30)
     this.renderer.toneMappingExposure = palette.exposure
     this.hemiLight.color.set(palette.hemiSky)
     this.hemiLight.groundColor.set(palette.hemiGround)
     this.hemiLight.intensity = palette.hemiIntensity
     this.sun.color.set(palette.sun)
     this.sun.intensity = palette.sunIntensity
-    this.groundMaterial.color.set(palette.ground)
-    this.bedWoodMaterial.color.set(palette.bedWood)
-    this.bedTopMaterial.color.set(palette.bedTop)
-    this.frameMaterial.color.set(palette.frame)
-    this.bulbMaterial.color.set(palette.bulb)
+    this.sun.position.copy(palette.sunDirection).normalize().multiplyScalar(14)
+    this.sun.target.position.set(0.5, 0, 0)
+    this.terrace.bulbMaterial.color.set(palette.bulb)
     this.ringMaterial.color.set(palette.ring)
-    for (const lantern of this.lanterns) {
-      lantern.intensity = palette.lanternIntensity
+    for (const lamp of this.terrace.lamps) {
+      lamp.intensity = palette.lampIntensity
     }
-    if (this.fireflies) {
-      this.fireflies.visible = theme === 'dark'
-    }
-    this.placeSun()
+    this.fireflies.visible = theme === 'dark'
   }
 
   setPlants(plants: Plant3D[]) {
@@ -387,23 +379,14 @@ export class GardenScene {
     this.nodes = []
     this.hitMeshes = []
 
-    const { width, depth } = getGardenSize(plants)
-    this.radius = Math.hypot(width, depth) / 2
-    this.buildStructure(width, depth)
-
     for (const plant of plants) {
       this.buildPlant(plant)
     }
-
-    this.setTheme(this.theme)
-    this.resetView()
   }
 
   resetView() {
-    const distance = this.radius * 1.7 + 3.2
-    this.camera.position.set(0, distance * 0.62, distance * 0.82)
-    this.controls.target.set(0, 0.75, 0)
-    this.controls.maxDistance = distance * 2.2
+    this.camera.position.set(2.4, 3.2, 4.6)
+    this.controls.target.copy(VIEW_TARGET)
     this.controls.update()
   }
 
@@ -418,97 +401,21 @@ export class GardenScene {
     canvas.removeEventListener('pointerleave', this.handlePointerLeave)
     this.controls.dispose()
     disposeTree(this.scene, new Set())
-    this.fireflyMaterial.map?.dispose()
     this.renderer.dispose()
     canvas.remove()
   }
 
   // -------------------------------------------------------------------------
-  // Dựng cảnh
+  // Dựng cây
   // -------------------------------------------------------------------------
-
-  private buildStructure(width: number, depth: number) {
-    disposeTree(this.structure, this.sharedMaterials)
-    this.structure.clear()
-    this.lanterns = []
-
-    // Luống gỗ + mặt đất trồng
-    const bed = new THREE.Mesh(new THREE.BoxGeometry(width + 1.2, BED_HEIGHT, depth + 1.2), this.bedWoodMaterial)
-    bed.position.y = BED_HEIGHT / 2
-    bed.receiveShadow = true
-    bed.castShadow = true
-    const bedTop = new THREE.Mesh(new THREE.BoxGeometry(width + 1, 0.02, depth + 1), this.bedTopMaterial)
-    bedTop.position.y = BED_HEIGHT + 0.005
-    bedTop.receiveShadow = true
-    this.structure.add(bed, bedTop)
-
-    // Khung nhà kính: cột + viền trên (không mái — mái cắt ngang tầm nhìn)
-    this.frameBeams = []
-    const halfWidth = width / 2 + 1.2
-    const halfDepth = depth / 2 + 1.2
-    const addBeam = (from: THREE.Vector3, to: THREE.Vector3) => {
-      const mesh = makeBeam(from, to, 0.06, this.frameMaterial)
-      this.frameBeams.push({ mesh, mid: mesh.position.clone() })
-      this.structure.add(mesh)
-    }
-    const baysX = Math.max(1, Math.round((halfWidth * 2) / 2.6))
-    const baysZ = Math.max(1, Math.round((halfDepth * 2) / 2.6))
-    const corners: [number, number][] = [
-      [-halfWidth, -halfDepth],
-      [halfWidth, -halfDepth],
-      [halfWidth, halfDepth],
-      [-halfWidth, halfDepth],
-    ]
-    corners.forEach(([x1, z1], index) => {
-      const [x2, z2] = corners[(index + 1) % 4]
-      const bays = x1 === x2 ? baysZ : baysX
-      for (let bay = 0; bay < bays; bay++) {
-        const x = x1 + ((x2 - x1) * bay) / bays
-        const z = z1 + ((z2 - z1) * bay) / bays
-        addBeam(new THREE.Vector3(x, 0, z), new THREE.Vector3(x, FRAME_HEIGHT, z))
-      }
-      addBeam(new THREE.Vector3(x1, FRAME_HEIGHT, z1), new THREE.Vector3(x2, FRAME_HEIGHT, z2))
-    })
-
-    // Cột đèn vườn ở 4 góc luống — chỉ sáng ở chế độ tối
-    for (const [sx, sz] of [
-      [-1, -1],
-      [1, -1],
-      [1, 1],
-      [-1, 1],
-    ]) {
-      const x = sx * (width / 2 + 0.45)
-      const z = sz * (depth / 2 + 0.45)
-      const pole = makeBeam(new THREE.Vector3(x, 0, z), new THREE.Vector3(x, LAMP_HEIGHT, z), 0.04, this.frameMaterial)
-      pole.castShadow = true
-      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 12), this.bulbMaterial)
-      bulb.position.set(x, LAMP_HEIGHT + 0.06, z)
-      const light = new THREE.PointLight('#ffc27a', 0, 0, 2)
-      light.position.set(x, LAMP_HEIGHT + 0.06, z)
-      this.lanterns.push(light)
-      this.structure.add(pole, bulb, light)
-    }
-
-    // Đom đóm
-    const positions = new Float32Array(FIREFLY_COUNT * 3)
-    const random = seededRandom(42)
-    for (let index = 0; index < FIREFLY_COUNT; index++) {
-      positions[index * 3] = (random() - 0.5) * (width + 2.5)
-      positions[index * 3 + 1] = 0.4 + random() * 2
-      positions[index * 3 + 2] = (random() - 0.5) * (depth + 2.5)
-    }
-    this.fireflyBase = positions.slice()
-    const geometry = new THREE.BufferGeometry()
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-    this.fireflies = new THREE.Points(geometry, this.fireflyMaterial)
-    this.structure.add(this.fireflies)
-  }
 
   private buildPlant(plant: Plant3D) {
     const random = seededRandom(plant.seed)
     const rank = plant.rankScore
+    const { slot } = plant
     const root = new THREE.Group()
-    root.position.set(plant.x, BED_HEIGHT, plant.z)
+    root.position.set(slot.x, slot.y, slot.z)
+    root.scale.setScalar(slot.scale)
 
     // Chậu (tiện tròn)
     const potScale = 0.85 + rank * 0.025
@@ -524,10 +431,9 @@ export class GardenScene {
       [0.29, 0.44],
       [0.28, 0.4],
     ].map(([x, y]) => new THREE.Vector2(x * potScale, y * potScale))
-    const potStyle = POT_STYLES[plant.tier]
     const pot = new THREE.Mesh(
       new THREE.LatheGeometry(profile, 32),
-      new THREE.MeshStandardMaterial({ ...potStyle, side: THREE.DoubleSide }),
+      new THREE.MeshStandardMaterial({ ...POT_STYLES[slot.pot], side: THREE.DoubleSide }),
     )
     pot.castShadow = true
     pot.receiveShadow = true
@@ -538,6 +444,19 @@ export class GardenScene {
     soil.position.y = potHeight * 0.9
     soil.receiveShadow = true
     root.add(pot, soil)
+
+    // Chậu treo: vòng đỡ đất nung + 3 dây lên móc
+    if (slot.hanging) {
+      const holder = new THREE.Mesh(new THREE.TorusGeometry(potRadius + 0.02, 0.025, 8, 32).rotateX(Math.PI / 2), this.holderMaterial)
+      holder.position.y = potHeight * 0.75
+      const hook = new THREE.Vector3(0, potHeight + 0.75, 0)
+      root.add(holder)
+      for (let index = 0; index < 3; index++) {
+        const angle = (index / 3) * Math.PI * 2
+        const rim = new THREE.Vector3(Math.cos(angle) * potRadius, potHeight * 0.75, Math.sin(angle) * potRadius)
+        root.add(makeBeam(rim, hook, 0.008, this.wireMaterial))
+      }
+    }
 
     // Tán lá: lá cũ thấp & xoè rộng, lá mới cao ở giữa (xoay theo góc vàng)
     const foliage = new THREE.Group()
@@ -583,8 +502,8 @@ export class GardenScene {
     }
     root.add(foliage)
 
-    // Thẻ polaroid cắm chậu — ảnh mới nhất trong Nhật ký
-    if (plant.coverPath) {
+    // Thẻ polaroid cắm chậu — ảnh mới nhất trong Nhật ký (bỏ qua chậu nhỏ / chậu treo cho đỡ rối)
+    if (plant.coverPath && !slot.hanging && slot.scale >= 0.6) {
       root.add(this.buildPhotoTag(plant.coverPath, potHeight, potRadius, random))
     }
 
@@ -655,20 +574,6 @@ export class GardenScene {
     return tag
   }
 
-  private placeSun() {
-    const reach = this.radius + 3
-    this.sun.position.copy(PALETTES[this.theme].sunDirection).normalize().multiplyScalar(reach * 2.5)
-    this.sun.target.position.set(0, 0, 0)
-    const shadow = this.sun.shadow.camera
-    shadow.left = -reach
-    shadow.right = reach
-    shadow.top = reach
-    shadow.bottom = -reach
-    shadow.near = 0.5
-    shadow.far = reach * 5
-    shadow.updateProjectionMatrix()
-  }
-
   // -------------------------------------------------------------------------
   // Vòng lặp + tương tác
   // -------------------------------------------------------------------------
@@ -681,33 +586,37 @@ export class GardenScene {
         node.foliage.rotation.z = Math.sin(seconds * 0.9 + node.phase) * 0.025
         node.foliage.rotation.x = Math.sin(seconds * 0.7 + node.phase * 1.3) * 0.02
       }
-      if (this.fireflies?.visible) {
+      if (this.fireflies.visible) {
         const positions = this.fireflies.geometry.attributes.position as THREE.BufferAttribute
         const base = this.fireflyBase
         for (let index = 0; index < positions.count; index++) {
           const phase = index * 1.7
           positions.setXYZ(
             index,
-            base[index * 3] + Math.sin(seconds * 0.4 + phase) * 0.35,
-            base[index * 3 + 1] + Math.sin(seconds * 0.6 + phase * 2) * 0.25,
-            base[index * 3 + 2] + Math.cos(seconds * 0.35 + phase) * 0.35,
+            base[index * 3] + Math.sin(seconds * 0.4 + phase) * 0.3,
+            base[index * 3 + 1] + Math.sin(seconds * 0.6 + phase * 2) * 0.2,
+            base[index * 3 + 2] + Math.cos(seconds * 0.35 + phase) * 0.3,
           )
         }
         positions.needsUpdate = true
         this.fireflyMaterial.opacity = 0.65 + Math.sin(seconds * 2.2) * 0.3
       }
     }
-    this.controls.update()
-    this.hideFrontBeams()
-    this.renderer.render(this.scene, this.camera)
-  }
 
-  private hideFrontBeams() {
-    this.viewDirection.subVectors(this.camera.position, this.controls.target).setY(0).normalize()
-    const limit = this.radius * 0.35
-    for (const { mesh, mid } of this.frameBeams) {
-      mesh.visible = mid.x * this.viewDirection.x + mid.z * this.viewDirection.z < limit
+    // Tự quay qua lại trong giới hạn góc nhìn
+    if (this.controls.autoRotate && Math.abs(this.controls.getAzimuthalAngle()) > AZIMUTH_LIMIT - 0.02) {
+      this.controls.autoRotateSpeed = -Math.sign(this.controls.getAzimuthalAngle()) * Math.abs(this.controls.autoRotateSpeed)
     }
+    this.controls.update()
+
+    // Camera ở trên lưới / mái → làm mờ để nhìn xuyên xuống cây
+    for (const canopy of this.terrace.canopies) {
+      const target = this.camera.position.y > canopy.height + 0.15 ? canopy.faded : canopy.opacity
+      canopy.material.opacity += (target - canopy.material.opacity) * 0.12
+      canopy.material.visible = canopy.material.opacity > 0.03
+    }
+
+    this.renderer.render(this.scene, this.camera)
   }
 
   private resize = () => {

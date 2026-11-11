@@ -7,9 +7,10 @@ import {
   type PlantRankTier,
 } from '@/lib/garden'
 import { getPlantCoverPath } from '@/lib/plants-data'
+import { getTerraceSlot, type TerraceSlot } from '@/lib/terrace-layout'
 
 /**
- * Dữ liệu 1 cây trong Vườn 3D — rút gọn từ `Plant`, đã tính sẵn vị trí trên luống.
+ * Dữ liệu 1 cây trong Vườn 3D — rút gọn từ `Plant`, kèm chỗ đặt trên sân thượng (`slot`).
  * Hình dáng cây sinh ra từ dữ liệu thật:
  * - chiều cao + cỡ lá ← hạng (rank 1–10)
  * - số lá ← số ảnh trong Nhật ký lá
@@ -29,12 +30,9 @@ export type Plant3D = {
   variegation: number
   seed: number
   coverPath: string | null
-  x: number
-  z: number
+  slot: TerraceSlot
 }
 
-/** Khoảng cách giữa 2 chậu (đơn vị three.js ≈ mét). */
-export const PLANT_SPACING = 1.35
 const MIN_LEAVES = 3
 const MAX_LEAVES = 14
 
@@ -62,20 +60,15 @@ export const seededRandom = (seed: number) => {
 }
 
 /**
- * Cây đang có trong vườn (chưa bán), xếp lên luống theo lưới:
- * hạng cao ở hàng sau (cây cao đứng sau như vườn thật), hàng cuối căn giữa.
+ * Cây đang có trong vườn (chưa bán), đặt lên sân thượng:
+ * hạng cao vào chỗ nổi bật trước (cụm chân tường, két Albo), rồi kệ, ván lan can, chậu treo.
  */
 export const toPlants3D = (plants: Plant[]): Plant3D[] => {
   const active = plants
     .filter((plant) => !plant.is_sold)
     .sort((left, right) => right.rank_score - left.rank_score || left.name.localeCompare(right.name, 'vi'))
-  const columns = Math.max(1, Math.ceil(Math.sqrt(active.length * 1.4)))
-  const rows = Math.ceil(active.length / columns)
 
   return active.map((plant, index) => {
-    const row = Math.floor(index / columns)
-    const column = index % columns
-    const inRow = row === rows - 1 ? active.length - row * columns : columns
     const seed = hashString(plant.id)
     const random = seededRandom(seed)
     const label = `${plant.name} ${plant.cultivar ?? ''} ${plant.scientific_name ?? ''}`
@@ -94,21 +87,7 @@ export const toPlants3D = (plants: Plant[]): Plant3D[] => {
       variegation: VARIEGATED.test(label) ? 0.35 + random() * 0.4 : random() * 0.06,
       seed,
       coverPath: getPlantCoverPath(plant),
-      x: (column - (inRow - 1) / 2) * PLANT_SPACING,
-      z: (row - (rows - 1) / 2) * PLANT_SPACING,
+      slot: getTerraceSlot(index),
     }
   })
-}
-
-/** Kích thước luống (rộng theo X, sâu theo Z) chứa toàn bộ cây. */
-export const getGardenSize = (plants: Plant3D[]) => {
-  if (plants.length === 0) {
-    return { width: PLANT_SPACING, depth: PLANT_SPACING }
-  }
-  const xs = plants.map((plant) => plant.x)
-  const zs = plants.map((plant) => plant.z)
-  return {
-    width: Math.max(...xs) - Math.min(...xs) + PLANT_SPACING,
-    depth: Math.max(...zs) - Math.min(...zs) + PLANT_SPACING,
-  }
 }
