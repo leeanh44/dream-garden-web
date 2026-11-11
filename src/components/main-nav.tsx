@@ -18,7 +18,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/capture', label: 'Chụp nhanh', icon: CameraIcon },
   { href: '/collection', label: 'Bộ sưu tập', icon: CollectionIcon },
   { href: '/insights', label: 'Giao dịch', icon: WalletIcon, comingSoon: true },
-  { href: '/planner', label: 'Vườn 3D', icon: CubeIcon, comingSoon: true },
+  { href: '/planner', label: 'Vườn 3D', icon: CubeIcon },
 ]
 
 const isActive = (pathname: string | null, href: string) =>
