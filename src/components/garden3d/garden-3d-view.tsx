@@ -18,13 +18,13 @@ const GardenCanvas = dynamic(() => import('@/components/garden3d/garden-canvas')
 })
 
 const LEGEND = [
-  'Cây cao, lá to = hạng cao',
+  'Hạng cao: cây to, đặt chỗ nổi bật',
   'Số lá = số ảnh trong Nhật ký',
   'Lá rủ = lâu chưa chụp',
-  'Chậu men kem = Top 1',
+  'Lá đốm = dòng Albo / Thai / Variegata',
 ]
 
-/** Vườn 3D: toàn bộ cây đang có, dựng thành nhà kính xoay / phóng to được. */
+/** Vườn 3D: sân thượng thật (dựng lại từ ảnh) với toàn bộ cây đang có, xoay / phóng to được. */
 export function Garden3DView() {
   const plantsQuery = usePlants()
   const router = useRouter()
@@ -44,7 +44,7 @@ export function Garden3DView() {
     <div className="animate-fade-in">
       <section className="relative mb-6 overflow-hidden rounded-[2rem] bg-surface-container-lowest p-6 shadow-leaf ring-1 ring-surface-container-high md:p-8">
         <CubeIcon className="pointer-events-none absolute -top-6 -right-4 h-44 w-44 rotate-12 text-primary/5" />
-        <p className="eyebrow">Nhà kính</p>
+        <p className="eyebrow">Sân thượng</p>
         <h1 className="font-serif text-3xl font-semibold text-on-surface md:text-4xl">Vườn 3D</h1>
         <p className="mt-1 max-w-xl text-sm text-on-surface-variant">
           Kéo để xoay, cuộn hoặc chụm hai ngón để phóng to. Chạm vào một chậu để xem cây.
@@ -69,7 +69,7 @@ export function Garden3DView() {
           <div className="skeleton h-full w-full" aria-busy="true" aria-label="Đang tải" />
         ) : plants.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-            <p className="text-on-surface-variant">Nhà kính còn trống — thêm cây đầu tiên để thấy nó mọc lên ở đây.</p>
+            <p className="text-on-surface-variant">Sân thượng còn trống — thêm cây đầu tiên để thấy nó mọc lên ở đây.</p>
             <Link href="/" className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary">
               Về Kho cây
             </Link>
@@ -96,7 +96,7 @@ export function Garden3DView() {
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-on-surface-variant">
-                  {hovered.photoCount} ảnh ·{' '}
+                  {hovered.slot.zone} · {hovered.photoCount} ảnh ·{' '}
                   {hovered.isStale ? `${hovered.daysSincePhoto} ngày chưa chụp` : `chụp ${hovered.daysSincePhoto} ngày trước`}
                 </p>
                 {hover.pinned ? (
