@@ -29,8 +29,6 @@ const TAP_TOLERANCE_PX = 6
 const FIREFLY_COUNT = 45
 /** Tâm nhìn: giữa góc chính và góc mái che */
 const VIEW_TARGET = new THREE.Vector3(0.1, 0.9, -0.8)
-/** Giới hạn góc xoay ngang — ra ngoài sẽ nhìn thấy mặt sau tường */
-const AZIMUTH_LIMIT = 0.9
 
 const PALETTES = {
   light: {
@@ -274,8 +272,6 @@ export class GardenScene {
     this.controls.maxPolarAngle = 1.38
     this.controls.minDistance = 1.2
     this.controls.maxDistance = 9
-    this.controls.minAzimuthAngle = -AZIMUTH_LIMIT
-    this.controls.maxAzimuthAngle = AZIMUTH_LIMIT
     this.controls.autoRotate = !options.reducedMotion
     this.controls.autoRotateSpeed = 0.3
     // Người dùng tự xoay → thôi tự quay
@@ -603,11 +599,18 @@ export class GardenScene {
       }
     }
 
-    // Tự quay qua lại trong giới hạn góc nhìn
-    if (this.controls.autoRotate && Math.abs(this.controls.getAzimuthalAngle()) > AZIMUTH_LIMIT - 0.02) {
-      this.controls.autoRotateSpeed = -Math.sign(this.controls.getAzimuthalAngle()) * Math.abs(this.controls.autoRotateSpeed)
-    }
     this.controls.update()
+
+    // Xoay 360°: nhà hàng xóm nằm giữa camera và vườn thì ẩn đi
+    const target = this.controls.target
+    const viewX = this.camera.position.x - target.x
+    const viewZ = this.camera.position.z - target.z
+    const viewLength = Math.hypot(viewX, viewZ) || 1
+    for (const building of this.terrace.occluders) {
+      const along = ((building.position.x - target.x) * viewX + (building.position.z - target.z) * viewZ) / viewLength
+      building.visible = along < 1
+    }
+    this.terrace.sideWallItems.visible = this.camera.position.x < this.terrace.sideWallX
 
     // Camera ở trên lưới / mái → làm mờ để nhìn xuyên xuống cây
     for (const canopy of this.terrace.canopies) {
