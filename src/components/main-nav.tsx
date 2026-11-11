@@ -11,14 +11,16 @@ type NavItem = {
   icon: ComponentType<{ className?: string }>
   /** Giai đoạn sau — hiện mờ + badge "Sắp có" */
   comingSoon?: boolean
+  /** Màn vừa (md): chỉ hiện icon để thanh điều hướng không xuống dòng */
+  iconOnlyOnTablet?: boolean
 }
 
 const NAV_ITEMS: NavItem[] = [
   { href: '/', label: 'Kho cây', icon: LeafIcon },
   { href: '/capture', label: 'Chụp nhanh', icon: CameraIcon },
   { href: '/collection', label: 'Bộ sưu tập', icon: CollectionIcon },
-  { href: '/insights', label: 'Giao dịch', icon: WalletIcon, comingSoon: true },
-  { href: '/planner', label: 'Vườn 3D', icon: CubeIcon },
+  { href: '/insights', label: 'Giao dịch', icon: WalletIcon, iconOnlyOnTablet: true },
+  { href: '/planner', label: 'Vườn 3D', icon: CubeIcon, iconOnlyOnTablet: true },
 ]
 
 const isActive = (pathname: string | null, href: string) =>
@@ -69,8 +71,10 @@ function NavLink({ item, active, compact }: { item: NavItem; active: boolean; co
   const content = (
     <>
       <Icon className={compact ? 'h-5 w-5' : 'h-4 w-4'} />
-      {/* Màn vừa: mục "Sắp có" chỉ hiện icon để thanh điều hướng không xuống dòng */}
-      <span className={item.comingSoon && !compact ? 'hidden lg:inline' : undefined}>{item.label}</span>
+      {/* Màn vừa: vài mục chỉ hiện icon để thanh điều hướng không xuống dòng */}
+      <span className={(item.comingSoon || item.iconOnlyOnTablet) && !compact ? 'hidden lg:inline' : undefined}>
+        {item.label}
+      </span>
     </>
   )
 
@@ -83,7 +87,13 @@ function NavLink({ item, active, compact }: { item: NavItem; active: boolean; co
   }
 
   return (
-    <Link href={item.href} className={className} aria-current={active ? 'page' : undefined}>
+    <Link
+      href={item.href}
+      className={className}
+      aria-current={active ? 'page' : undefined}
+      aria-label={item.iconOnlyOnTablet && !compact ? item.label : undefined}
+      title={item.iconOnlyOnTablet && !compact ? item.label : undefined}
+    >
       {content}
     </Link>
   )

@@ -244,9 +244,7 @@ function GardenHero({
       <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="eyebrow">Bộ sưu tập kiểng lá</p>
-          <h1 className="mt-2 max-w-2xl font-serif text-[2.5rem] leading-[1.05] font-medium tracking-tight text-balance text-on-surface md:text-6xl">
-            Khu vườn đang <em className="text-primary">bung lá mới</em>.
-          </h1>
+          <h1 className="sr-only">Kho cây</h1>
         </div>
         <button type="button" onClick={onAdd} className="btn-primary hidden self-start md:inline-flex md:self-auto">
           <LeafPlusIcon className="-my-2 h-10 w-10" />

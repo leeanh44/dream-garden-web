@@ -11,8 +11,9 @@ Bản web của app iOS **Dream's Garden** (`../garden-app`): quản lý vườn
 | 1 | Đăng nhập, Kho cây, Chi tiết cây (Nhật ký lá + Hồ sơ), upload ảnh | ✅ |
 | 2 | Video timelapse từ Nhật ký lá (9:16 · 1:1 · 16:9, MP4) | ✅ |
 | 2.5 | PWA (cài lên điện thoại, Chụp nhanh) · Bộ sưu tập ảnh đẹp nhất · Gợi ý tên khoa học | ✅ |
-| 3 | Gemini AI, tab Xuất, tab Giao dịch | ⏳ |
-| 4 | Thiết kế vườn 3D | ⏳ |
+| 3 | Tab Xuất (ghi lượt xuất, bán hẳn) · Giao dịch (thống kê, lãi lỗ, nhật ký nhập / xuất) | ✅ |
+| 3b | Gemini AI | ⏳ |
+| 4 | Vườn 3D — sân thượng dựng lại từ ảnh, xoay 360° | ✅ |
 
 ## Cài đặt
 
